@@ -1,0 +1,92 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(uuid())
+  username    String   @unique @db.VarChar(20)
+  displayName String   @map("display_name") @db.VarChar(50)
+  color       String   @db.VarChar(7)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  places Place[]
+
+  @@map("users")
+}
+
+model Place {
+  id        String        @id @default(uuid())
+  name      String        @db.VarChar(200)
+  mapsLink  String        @map("maps_link")
+  category  PlaceCategory
+  cuisine   String?       @db.VarChar(100)
+  priceRange PriceRange?  @map("price_range")
+  distance  String?       @db.VarChar(20)
+
+  // Gemini extracted
+  summary     String?
+  topMenus    String[]  @map("top_menus")
+  worstReview String?   @map("worst_review")
+
+  // Metadata
+  addedBy   User     @relation(fields: [addedById], references: [id])
+  addedById String   @map("added_by")
+  addedAt   DateTime @default(now()) @map("added_at")
+  status    PlaceStatus @default(suggested)
+
+  // Approval
+  hasbiApproved Boolean @default(false) @map("hasbi_approved")
+  nadyaApproved Boolean @default(false) @map("nadya_approved")
+
+  // After visit
+  visitedAt DateTime? @map("visited_at")
+  photoUrl  String?   @map("photo_url")
+  rating    Int?
+  notes     String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([addedById])
+  @@index([category])
+  @@index([visitedAt(sort: Desc)])
+  @@map("places")
+}
+
+model AppConfig {
+  id        String   @id @default(uuid())
+  key       String   @unique @db.VarChar(50)
+  value     String
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("app_config")
+}
+
+enum PlaceStatus {
+  suggested
+  planned
+  archived
+  skipped
+}
+
+enum PlaceCategory {
+  cafe
+  resto
+  sushi
+  fine_dining
+  street_food
+  dessert
+}
+
+enum PriceRange {
+  cheap      @map("$")
+  moderate   @map("$$")
+  expensive  @map("$$$")
+  luxury     @map("$$$$")
+}
