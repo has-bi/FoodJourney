@@ -6,41 +6,111 @@
   --font-mono: var(--font-geist-mono);
 }
 
-/* FoodJourney Custom Theme */
+/* FoodJourney Light Theme */
 :root {
-  /* DaisyUI theme colors */
-  --color-primary: #6366f1;
-  --color-primary-content: #ffffff;
-  --color-secondary: #ec4899;
-  --color-secondary-content: #ffffff;
-  --color-accent: #14b8a6;
-  --color-accent-content: #ffffff;
-  --color-neutral: #1f2937;
-  --color-neutral-content: #ffffff;
+  /* Base colors - clean white backgrounds */
   --color-base-100: #ffffff;
-  --color-base-200: #f9fafb;
-  --color-base-300: #f3f4f6;
-  --color-base-content: #1f2937;
-  --color-info: #3abff8;
-  --color-info-content: #002b3d;
-  --color-success: #36d399;
-  --color-success-content: #003320;
-  --color-warning: #fbbd23;
-  --color-warning-content: #382800;
-  --color-error: #f87272;
-  --color-error-content: #470000;
+  --color-base-200: #f8fafc;
+  --color-base-300: #f1f5f9;
+  --color-base-content: #1e293b;
+
+  /* Primary - Indigo (Hasbi) */
+  --color-primary: #4f46e5;
+  --color-primary-content: #ffffff;
+
+  /* Secondary - Pink (Nadya) */
+  --color-secondary: #db2777;
+  --color-secondary-content: #ffffff;
+
+  /* Accent - Teal */
+  --color-accent: #0d9488;
+  --color-accent-content: #ffffff;
+
+  /* Neutral - Dark slate for text */
+  --color-neutral: #334155;
+  --color-neutral-content: #ffffff;
+
+  /* Status colors */
+  --color-success: #16a34a;
+  --color-success-content: #ffffff;
+  --color-warning: #ca8a04;
+  --color-warning-content: #ffffff;
+  --color-error: #dc2626;
+  --color-error-content: #ffffff;
+  --color-info: #0284c7;
+  --color-info-content: #ffffff;
 
   /* User colors */
-  --color-hasbi: #6366f1;
-  --color-nadya: #ec4899;
+  --color-hasbi: #4f46e5;
+  --color-nadya: #db2777;
+}
+
+/* Ensure light theme */
+html {
+  color-scheme: light;
 }
 
 /* Base body styles */
 body {
-  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background-color: var(--color-base-200);
+  color: var(--color-base-content);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Mobile-first utilities */
+/* Card improvements */
+.card {
+  background-color: var(--color-base-100);
+}
+
+/* Modal backdrop */
+.modal-backdrop {
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(2px);
+}
+
+/* Better badge contrast */
+.badge-outline {
+  border-color: var(--color-neutral);
+  color: var(--color-neutral);
+}
+
+/* Mobile safe areas */
 .safe-bottom {
   padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Smooth transitions */
+.card, .btn, .badge {
+  transition: all 0.15s ease-in-out;
+}
+
+/* Card hover effect */
+.card-clickable:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.card-clickable:active {
+  transform: translateY(0);
+}
+
+/* Better scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-base-200);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-base-300);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-neutral);
 }

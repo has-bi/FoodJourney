@@ -4,17 +4,7 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { extractPlaceInfo, isValidMapsLink } from "@/lib/gemini";
 import { getCurrentUser } from "@/lib/auth";
-import type { PlaceCategory, PriceRange, PlaceStatus } from "@prisma/client";
-
-function mapPriceRange(price: string): PriceRange | null {
-  const mapping: Record<string, PriceRange> = {
-    "$": "cheap",
-    "$$": "moderate",
-    "$$$": "expensive",
-    "$$$$": "luxury",
-  };
-  return mapping[price] || null;
-}
+import type { PlaceCategory, PlaceStatus, Prisma } from "@prisma/client";
 
 export async function addPlace(
   _prevState: { error?: string; success?: boolean } | null,
@@ -22,6 +12,7 @@ export async function addPlace(
 ) {
   const mapsLink = formData.get("mapsLink") as string;
   const category = formData.get("category") as PlaceCategory;
+  const notes = formData.get("notes") as string | null;
 
   if (!mapsLink) {
     return { error: "Maps link is required" };
@@ -60,12 +51,36 @@ export async function addPlace(
         name: extracted.name,
         mapsLink,
         category,
-        cuisine: extracted.cuisine !== "N/A" ? extracted.cuisine : null,
-        priceRange: mapPriceRange(extracted.priceRange),
-        topMenus: extracted.topMenus,
-        worstReview: extracted.worstReview !== "N/A" ? extracted.worstReview : null,
+
+        // Basic info
+        cuisine: extracted.cuisine !== "Not available" ? extracted.cuisine : null,
+        area: extracted.area !== "Not available" ? extracted.area : null,
+
+        // Pricing
+        priceRangeText: extracted.priceRange !== "Not available" ? extracted.priceRange : null,
+        priceCategory: extracted.priceCategory,
+
+        // Menu items as JSON
+        signatureMenus: extracted.signatureMenus.length > 0
+          ? (extracted.signatureMenus as unknown as Prisma.InputJsonValue)
+          : undefined,
+
+        // Quality indicators (ensure proper types)
+        googleRating: typeof extracted.rating === "number" ? extracted.rating : null,
+        reviewCount: typeof extracted.reviewCount === "number" ? extracted.reviewCount : null,
+
+        // Practical info
+        commonComplaint: extracted.commonComplaint !== "No complaints found" ? extracted.commonComplaint : null,
+        waitTime: extracted.waitTime !== "Not available" ? extracted.waitTime : null,
+        parkingInfo: extracted.parkingInfo !== "Not available" ? extracted.parkingInfo : null,
+        operatingHours: extracted.operatingHours !== "Not available" ? extracted.operatingHours : null,
+
+        // AI confidence
+        aiConfidence: extracted.confidence,
+
         addedById: user.id,
         status: "suggested",
+        suggestedNotes: notes || null,
         ...approval,
       },
     });
@@ -129,31 +144,75 @@ export async function skipPlace(placeId: string) {
   }
 }
 
-export async function archivePlace(
+export async function addVisitReview(
   placeId: string,
+  currentUser: "hasbi" | "nadya",
   visitDate: Date,
   rating: number,
   notes: string,
   photoUrl?: string
 ) {
   try {
+    // Get current place data
+    const place = await db.place.findUnique({
+      where: { id: placeId },
+      select: {
+        hasbiRating: true,
+        nadyaRating: true,
+        visitedAt: true,
+        photoUrl: true,
+      },
+    });
+
+    if (!place) {
+      return { error: "Place not found" };
+    }
+
+    // Build user-specific review data
+    const reviewData = currentUser === "hasbi"
+      ? {
+          hasbiRating: rating,
+          hasbiNotes: notes || null,
+          hasbiReviewedAt: new Date(),
+        }
+      : {
+          nadyaRating: rating,
+          nadyaNotes: notes || null,
+          nadyaReviewedAt: new Date(),
+        };
+
+    // Check if this completes both reviews
+    const willHaveBothReviews =
+      (currentUser === "hasbi" && place.nadyaRating !== null) ||
+      (currentUser === "nadya" && place.hasbiRating !== null);
+
+    // Only update photo/visitDate if not already set (first reviewer sets these)
+    const visitData: Record<string, unknown> = {};
+    if (!place.visitedAt) {
+      visitData.visitedAt = visitDate;
+    }
+    if (!place.photoUrl && photoUrl) {
+      visitData.photoUrl = photoUrl;
+    }
+
     await db.place.update({
       where: { id: placeId },
       data: {
-        status: "archived",
-        visitedAt: visitDate,
-        rating,
-        notes: notes || null,
-        photoUrl: photoUrl || null,
+        ...reviewData,
+        ...visitData,
+        // Only move to archived when both have reviewed
+        ...(willHaveBothReviews ? { status: "archived" } : {}),
       },
     });
 
     revalidatePath("/planned");
-    revalidatePath("/archived");
-    return { success: true };
+    if (willHaveBothReviews) {
+      revalidatePath("/archived");
+    }
+    return { success: true, completed: willHaveBothReviews };
   } catch (error) {
-    console.error("Error archiving place:", error);
-    return { error: "Failed to archive place" };
+    console.error("Error adding visit review:", error);
+    return { error: "Failed to add review" };
   }
 }
 

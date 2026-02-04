@@ -29,21 +29,20 @@ export default async function AppLayout({
   const pendingCount = await getPendingCount(currentUser);
 
   return (
-    <div className="min-h-screen bg-base-200 pb-16">
+    <div className="min-h-screen bg-base-200 pb-20">
       {/* Header */}
-      <header className="sticky top-0 z-10 bg-base-100 border-b border-base-300">
-        <div className="navbar px-4">
-          <div className="flex-1">
-            <span className="text-lg font-bold">FoodJourney</span>
+      <header className="sticky top-0 z-40 bg-base-100/95 backdrop-blur-sm border-b border-base-200">
+        <div className="flex items-center justify-between h-14 px-4 max-w-lg mx-auto">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">🍽️</span>
+            <span className="font-bold text-base-content">FoodJourney</span>
           </div>
-          <div className="flex-none">
-            <UserSelector currentUser={currentUser} />
-          </div>
+          <UserSelector currentUser={currentUser} />
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="p-4">{children}</main>
+      <main className="px-4 py-4 max-w-lg mx-auto">{children}</main>
 
       {/* Add Place FAB */}
       <AddPlaceModal />

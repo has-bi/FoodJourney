@@ -88,6 +88,7 @@ export default function PlannedPage() {
       {selectedPlace && (
         <ArchiveModal
           place={selectedPlace}
+          currentUser={currentUser}
           onClose={() => setSelectedPlace(null)}
           onSuccess={handleArchiveSuccess}
         />

@@ -4,11 +4,11 @@ import { redirect } from "next/navigation";
 import type { PlaceWithUser } from "@/lib/types";
 import Link from "next/link";
 
-const priceLabels: Record<string, string> = {
-  cheap: "$",
+const priceCategoryLabels: Record<string, string> = {
+  budget: "$",
   moderate: "$$",
   expensive: "$$$",
-  luxury: "$$$$",
+  premium: "$$$$",
 };
 
 export default async function ArchivedPage() {
@@ -50,11 +50,25 @@ export default async function ArchivedPage() {
                   {place.name}
                 </h3>
                 <div className="flex items-center justify-between text-xs text-base-content/60">
-                  <span>
-                    {place.rating ? "⭐".repeat(place.rating) : "No rating"}
-                  </span>
-                  {place.priceRange && (
-                    <span>{priceLabels[place.priceRange]}</span>
+                  <div className="flex items-center gap-1">
+                    {place.hasbiRating && (
+                      <span className="flex items-center gap-0.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                        <span className="text-warning">{"★".repeat(place.hasbiRating)}</span>
+                      </span>
+                    )}
+                    {place.nadyaRating && (
+                      <span className="flex items-center gap-0.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-secondary" />
+                        <span className="text-warning">{"★".repeat(place.nadyaRating)}</span>
+                      </span>
+                    )}
+                    {!place.hasbiRating && !place.nadyaRating && (
+                      <span>No ratings</span>
+                    )}
+                  </div>
+                  {place.priceCategory && (
+                    <span>{priceCategoryLabels[place.priceCategory]}</span>
                   )}
                 </div>
                 {place.visitedAt && (

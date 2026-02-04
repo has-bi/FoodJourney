@@ -24,14 +24,30 @@ model Place {
   name      String        @db.VarChar(200)
   mapsLink  String        @map("maps_link")
   category  PlaceCategory
-  cuisine   String?       @db.VarChar(100)
-  priceRange PriceRange?  @map("price_range")
-  distance  String?       @db.VarChar(20)
 
-  // Gemini extracted
-  summary     String?
-  topMenus    String[]  @map("top_menus")
-  worstReview String?   @map("worst_review")
+  // Basic info from Gemini
+  cuisine   String?       @db.VarChar(100)
+  area      String?       @db.VarChar(100) // e.g., "Bintaro", "Senayan"
+
+  // Pricing
+  priceRangeText  String?   @map("price_range_text") @db.VarChar(50) // "50-100k IDR"
+  priceCategory   String?   @map("price_category") @db.VarChar(20) // budget/moderate/expensive/premium
+
+  // Menu - stored as JSON
+  signatureMenus  Json?     @map("signature_menus") // [{name, price}]
+
+  // Quality indicators
+  googleRating    Float?    @map("google_rating")
+  reviewCount     Int?      @map("review_count")
+
+  // Practical info
+  commonComplaint String?   @map("common_complaint")
+  waitTime        String?   @map("wait_time") @db.VarChar(50)
+  parkingInfo     String?   @map("parking_info") @db.VarChar(100)
+  operatingHours  String?   @map("operating_hours") @db.VarChar(100)
+
+  // AI confidence
+  aiConfidence    String?   @map("ai_confidence") @db.VarChar(10) // high/medium/low
 
   // Metadata
   addedBy   User     @relation(fields: [addedById], references: [id])
@@ -43,11 +59,22 @@ model Place {
   hasbiApproved Boolean @default(false) @map("hasbi_approved")
   nadyaApproved Boolean @default(false) @map("nadya_approved")
 
+  // Notes when suggesting
+  suggestedNotes String? @map("suggested_notes")
+
   // After visit
   visitedAt DateTime? @map("visited_at")
   photoUrl  String?   @map("photo_url")
-  rating    Int?
-  notes     String?
+
+  // Hasbi's review
+  hasbiRating Int?    @map("hasbi_rating")
+  hasbiNotes  String? @map("hasbi_notes")
+  hasbiReviewedAt DateTime? @map("hasbi_reviewed_at")
+
+  // Nadya's review
+  nadyaRating Int?    @map("nadya_rating")
+  nadyaNotes  String? @map("nadya_notes")
+  nadyaReviewedAt DateTime? @map("nadya_reviewed_at")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -82,11 +109,4 @@ enum PlaceCategory {
   fine_dining
   street_food
   dessert
-}
-
-enum PriceRange {
-  cheap      @map("$")
-  moderate   @map("$$")
-  expensive  @map("$$$")
-  luxury     @map("$$$$")
 }
