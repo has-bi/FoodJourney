@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { hashSync } from "bcryptjs";
 
 const prisma = new PrismaClient();
 
@@ -28,14 +29,36 @@ async function main() {
 
   console.log("Created users:", { hasbi, nadya });
 
-  // Create app config for shared password
-  // Default password is "foodjourney" - should be changed in production
+  // Per-user password config (bcrypt hash)
+  await prisma.appConfig.upsert({
+    where: { key: "password_hasbi" },
+    update: {
+      value: hashSync("tektektek", 10),
+    },
+    create: {
+      key: "password_hasbi",
+      value: hashSync("tektektek", 10),
+    },
+  });
+
+  await prisma.appConfig.upsert({
+    where: { key: "password_nadya" },
+    update: {
+      value: hashSync("cegundengdong", 10),
+    },
+    create: {
+      key: "password_nadya",
+      value: hashSync("cegundengdong", 10),
+    },
+  });
+
+  // Keep legacy shared password key for backward compatibility.
   await prisma.appConfig.upsert({
     where: { key: "shared_password" },
     update: {},
     create: {
       key: "shared_password",
-      value: "foodjourney", // Plain text for now, will be hashed by auth system
+      value: hashSync("foodjourney", 10),
     },
   });
 

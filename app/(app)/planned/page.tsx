@@ -1,73 +1,228 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState, useTransition, useCallback, type FormEvent } from "react";
+import Image from "next/image";
 import { PlaceCard } from "@/components/PlaceCard";
 import { ArchiveModal } from "@/components/ArchiveModal";
 import type { PlaceWithUser, Username } from "@/lib/types";
+import { Spinner } from "@/components/ui/spinner";
+import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { setPartnerMessage } from "@/app/actions/message";
+
+const moodFilters = [
+  { value: null, label: "Semua", icon: "🍽️" },
+  { value: "rainy_day", label: "Hujan", icon: "🌧️" },
+  { value: "hungry_af", label: "Laper", icon: "😤" },
+  { value: "comfort_food", label: "Healing", icon: "🍜" },
+  { value: "birthday", label: "Ultah", icon: "🎂" },
+  { value: "anniversary", label: "Anniv", icon: "💕" },
+  { value: "budget", label: "Bokek", icon: "💸" },
+  { value: "cheat_day", label: "Cheat", icon: "🍔" },
+  { value: "quick_bite", label: "Buru", icon: "⚡" },
+];
 
 export default function PlannedPage() {
   const [places, setPlaces] = useState<PlaceWithUser[]>([]);
   const [currentUser, setCurrentUser] = useState<Username>("hasbi");
   const [selectedPlace, setSelectedPlace] = useState<PlaceWithUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedMood, setSelectedMood] = useState<string | null>(null);
+  const [incomingMessage, setIncomingMessage] = useState("");
+  const [messageDraft, setMessageDraft] = useState("");
+  const [messageFeedback, setMessageFeedback] = useState<string | null>(null);
+  const [isMessageError, setIsMessageError] = useState(false);
   const [, startTransition] = useTransition();
+  const [isSavingMessage, startSavingMessage] = useTransition();
+
+  const fetchData = useCallback(async () => {
+    try {
+      const [placesRes, userRes, messageRes] = await Promise.all([
+        fetch("/api/places?status=planned"),
+        fetch("/api/user"),
+        fetch("/api/message"),
+      ]);
+
+      if (placesRes.ok) {
+        const data = await placesRes.json();
+        setPlaces(data);
+      }
+
+      if (userRes.ok) {
+        const userData = await userRes.json();
+        setCurrentUser(userData.username);
+      }
+
+      if (messageRes.ok) {
+        const messageData = await messageRes.json();
+        setIncomingMessage(messageData.incomingMessage || "");
+        setMessageDraft(messageData.outgoingMessage || "");
+      }
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [placesRes, userRes] = await Promise.all([
-          fetch("/api/places?status=planned"),
-          fetch("/api/user"),
-        ]);
-
-        if (placesRes.ok) {
-          const data = await placesRes.json();
-          setPlaces(data);
-        }
-
-        if (userRes.ok) {
-          const userData = await userRes.json();
-          setCurrentUser(userData.username);
-        }
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   const handleArchive = (place: PlaceWithUser) => {
     setSelectedPlace(place);
   };
 
-  const handleArchiveSuccess = () => {
-    setSelectedPlace(null);
-    // Refresh the list
-    startTransition(() => {
-      fetch("/api/places?status=planned")
-        .then((res) => res.json())
-        .then((data) => setPlaces(data));
+  const handleMessageSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    setMessageFeedback(null);
+
+    startSavingMessage(async () => {
+      const result = await setPartnerMessage(messageDraft);
+
+      if (result?.error) {
+        setIsMessageError(true);
+        setMessageFeedback(result.error);
+        return;
+      }
+
+      setIsMessageError(false);
+      setMessageFeedback("Pesan lu kekirim ke doi");
+      await fetchData();
     });
   };
+
+  const handleArchiveSuccess = () => {
+    // Don't close modal here — let the success screen show first
+    // Data refresh happens on close
+  };
+
+  const myReviewedCount = places.filter((place) => (
+    currentUser === "hasbi" ? place.hasbiRating !== null : place.nadyaRating !== null
+  )).length;
+
+  const needsMyReviewCount = places.filter((place) => {
+    const currentReviewed = currentUser === "hasbi"
+      ? place.hasbiRating !== null
+      : place.nadyaRating !== null;
+    const partnerReviewed = currentUser === "hasbi"
+      ? place.nadyaRating !== null
+      : place.hasbiRating !== null;
+    return partnerReviewed && !currentReviewed;
+  }).length;
+
+  // Filter places by selected mood
+  const filteredPlaces = selectedMood
+    ? places.filter((place) => {
+        const tags = (place.tags as unknown as string[]) || [];
+        return tags.includes(selectedMood);
+      })
+    : places;
+
+  const partnerName = currentUser === "hasbi" ? "Nadya" : "Hasbi";
 
   if (isLoading) {
     return (
       <div className="flex justify-center py-12">
-        <span className="loading loading-spinner loading-lg"></span>
+        <Spinner size="lg" className="text-muted-foreground" />
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
-      <h1 className="text-lg font-semibold">Planned Places</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-lg font-medium">Mau Kesini 📋</h1>
+        <span className={`text-xs ${currentUser === "hasbi" ? "text-primary" : "text-secondary"}`}>
+          Akun aktif: {currentUser === "hasbi" ? "Hasbi" : "Nadya"}
+        </span>
+      </div>
+
+      {/* Partner Message */}
+      <section className="space-y-3 rounded-3xl border-2 border-border bg-card p-4 shadow-[0_6px_0_0_rgba(61,44,44,0.08)]">
+        <div className="rounded-2xl border-2 border-border bg-muted/50 p-3">
+          <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+            Pesan Dari {partnerName}
+          </p>
+          <p className="mt-1 truncate text-sm text-foreground">
+            {incomingMessage || "Belom ada pesan masuk nih"}
+          </p>
+        </div>
+
+        <form onSubmit={handleMessageSubmit} className="space-y-2">
+          <label htmlFor="partner-message" className="block text-sm font-medium text-foreground">
+            Kirim Pesan Kilat Buat {partnerName}
+          </label>
+          <div className="flex items-center gap-2">
+            <Input
+              id="partner-message"
+              maxLength={120}
+              value={messageDraft}
+              onChange={(e) => setMessageDraft(e.target.value.replace(/\r?\n/g, " "))}
+              placeholder="Contoh: Nanti malem gas kesini ya"
+            />
+            <Button type="submit" size="sm" disabled={isSavingMessage}>
+              {isSavingMessage ? "Ngirim..." : "Kirim"}
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">1 baris doang, maksimal 120 karakter.</p>
+          {messageFeedback && (
+            <p className={cn("text-xs", isMessageError ? "text-destructive" : "text-success")}>
+              {messageFeedback}
+            </p>
+          )}
+        </form>
+      </section>
+
+      {/* Mood Filter */}
+      {places.length > 0 && (
+        <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
+          {moodFilters.map((filter) => (
+            <button
+              key={filter.value || "all"}
+              onClick={() => setSelectedMood(filter.value)}
+              className={cn(
+                "flex shrink-0 items-center gap-1.5 rounded-full border-2 px-3 py-1.5 text-xs transition-all",
+                selectedMood === filter.value
+                  ? "border-foreground/40 bg-muted font-medium"
+                  : "border-border hover:border-foreground/20"
+              )}
+            >
+              <span>{filter.icon}</span>
+              <span>{filter.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {places.length > 0 ? (
         <div className="space-y-3">
-          {places.map((place) => (
+          <div className="grid grid-cols-3 gap-3">
+            <div className="rounded-2xl border-2 border-border bg-card p-3 shadow-[0_4px_0_0_rgba(61,44,44,0.06)]">
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Antrian</p>
+              <p className="mt-1 text-lg font-medium text-foreground">{places.length}</p>
+            </div>
+            <div className="rounded-2xl border-2 border-border bg-card p-3 shadow-[0_4px_0_0_rgba(61,44,44,0.06)]">
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Udah Review</p>
+              <p className="mt-1 text-lg font-medium text-foreground">{myReviewedCount}</p>
+            </div>
+            <div className="rounded-2xl border-2 border-border bg-card p-3 shadow-[0_4px_0_0_rgba(61,44,44,0.06)]">
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Giliran Lu</p>
+              <p className="mt-1 text-lg font-medium text-foreground">{needsMyReviewCount}</p>
+            </div>
+          </div>
+
+          {/* Filtered results info */}
+          {selectedMood && (
+            <p className="text-xs text-muted-foreground">
+              {filteredPlaces.length > 0
+                ? `${filteredPlaces.length} tempat cocok buat mood ${moodFilters.find(f => f.value === selectedMood)?.label.toLowerCase()}`
+                : "Belom ada tempat di tag ini, coba filter lain!"}
+            </p>
+          )}
+
+          {filteredPlaces.map((place) => (
             <PlaceCard
               key={place.id}
               place={place}
@@ -78,9 +233,10 @@ export default function PlannedPage() {
         </div>
       ) : (
         <div className="text-center py-12">
-          <p className="text-base-content/60 mb-2">No planned places yet</p>
-          <p className="text-sm text-base-content/40">
-            Approve suggestions to add them here
+          <Image src="/assets/pixel-plate.svg" alt="" aria-hidden="true" width={40} height={40} className="mx-auto mb-3 h-10 w-10" />
+          <p className="mb-2 text-muted-foreground">Belum ada rencana makan nih</p>
+          <p className="text-sm text-muted-foreground/70">
+            ACC dulu saran tempat biar masuk sini
           </p>
         </div>
       )}
@@ -89,7 +245,10 @@ export default function PlannedPage() {
         <ArchiveModal
           place={selectedPlace}
           currentUser={currentUser}
-          onClose={() => setSelectedPlace(null)}
+          onClose={() => {
+            setSelectedPlace(null);
+            startTransition(() => { fetchData(); });
+          }}
           onSuccess={handleArchiveSuccess}
         />
       )}

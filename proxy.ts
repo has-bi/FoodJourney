@@ -4,7 +4,7 @@ import { decrypt } from "./lib/auth";
 
 const publicRoutes = ["/login"];
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const isPublicRoute = publicRoutes.includes(path);
 

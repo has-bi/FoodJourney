@@ -7,7 +7,7 @@ export async function GET() {
 
     if (!username) {
       return NextResponse.json(
-        { error: "Not authenticated" },
+        { error: "Belom login nih" },
         { status: 401 }
       );
     }
@@ -16,7 +16,7 @@ export async function GET() {
   } catch (error) {
     console.error("Error getting user:", error);
     return NextResponse.json(
-      { error: "Failed to get user" },
+      { error: "Gagal ngambil data user" },
       { status: 500 }
     );
   }

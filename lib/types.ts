@@ -1,10 +1,21 @@
-import type { Place, User, PlaceStatus, PlaceCategory } from "@prisma/client";
+import type { Place, User, PlaceStatus, PlaceCategory, Visit } from "@prisma/client";
 
-export type { Place, User, PlaceStatus, PlaceCategory };
+export type { Place, User, PlaceStatus, PlaceCategory, Visit };
 
 export type PlaceWithUser = Place & {
   addedBy: User;
+  visits?: Visit[];
 };
+
+export type VisitWithPlace = Visit & {
+  place: Place;
+};
+
+// Ordered item from a visit
+export interface OrderedItem {
+  name: string;
+  notes?: string; // e.g., "Enak banget!", "Terlalu asin"
+}
 
 export type Username = "hasbi" | "nadya";
 

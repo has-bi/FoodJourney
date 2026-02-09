@@ -1,8 +1,10 @@
 "use client";
 
-import { useTransition } from "react";
-import { switchUser, logout } from "@/app/actions/auth";
+import { useEffect, useRef, useState, useTransition } from "react";
+import { logout } from "@/app/actions/auth";
 import type { Username } from "@/lib/types";
+import { Spinner } from "@/components/ui/spinner";
+import { cn } from "@/lib/utils";
 
 interface UserSelectorProps {
   currentUser: Username;
@@ -10,97 +12,92 @@ interface UserSelectorProps {
 
 export function UserSelector({ currentUser }: UserSelectorProps) {
   const [isPending, startTransition] = useTransition();
-
-  const handleSwitch = (username: Username) => {
-    startTransition(() => {
-      switchUser(username);
-    });
-  };
+  const [isOpen, setIsOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const displayName = currentUser === "hasbi" ? "Hasbi" : "Nadya";
+  const isHasbi = currentUser === "hasbi";
 
   const handleLogout = () => {
     startTransition(() => {
       logout();
     });
+    setIsOpen(false);
   };
 
+  useEffect(() => {
+    const handleClick = (event: MouseEvent) => {
+      if (!menuRef.current?.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClick);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, []);
+
   return (
-    <div className="dropdown dropdown-end">
-      <div
-        tabIndex={0}
-        role="button"
-        className="flex items-center gap-2 px-3 py-2 rounded-full bg-base-200 hover:bg-base-300 transition-colors cursor-pointer"
+    <div className="relative" ref={menuRef}>
+      <button
+        type="button"
+        onClick={() => setIsOpen((open) => !open)}
+        aria-expanded={isOpen}
+        aria-haspopup="menu"
+        className="flex items-center gap-2 rounded-full border-2 border-border bg-card px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
       >
         <span
-          className={`w-2.5 h-2.5 rounded-full ${
-            currentUser === "hasbi" ? "bg-primary" : "bg-secondary"
-          }`}
+          className={cn(
+            "h-2.5 w-2.5 rounded-full",
+            isHasbi ? "bg-primary" : "bg-secondary"
+          )}
         />
-        <span className="text-sm font-medium text-base-content capitalize">
-          {currentUser}
-        </span>
+        <span>{displayName}</span>
         {isPending ? (
-          <span className="loading loading-spinner loading-xs" />
+          <Spinner size="xs" className="text-muted-foreground" />
         ) : (
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-base-content/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className={cn("h-4 w-4 text-muted-foreground transition-transform", isOpen && "rotate-180")}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
         )}
-      </div>
-      <ul
-        tabIndex={0}
-        className="dropdown-content z-50 mt-2 p-2 shadow-lg bg-base-100 rounded-xl w-44 border border-base-200"
-      >
-        <li className="px-3 py-1.5 text-xs font-medium text-base-content/50 uppercase tracking-wide">
-          Switch User
-        </li>
-        <li>
-          <button
-            onClick={() => handleSwitch("hasbi")}
-            className={`flex items-center gap-3 w-full px-3 py-2 rounded-lg transition-colors ${
-              currentUser === "hasbi"
-                ? "bg-primary/10 text-primary"
-                : "hover:bg-base-200 text-base-content"
-            }`}
-          >
-            <span className="w-2.5 h-2.5 rounded-full bg-primary" />
-            <span className="text-sm font-medium">Hasbi</span>
-            {currentUser === "hasbi" && (
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+      </button>
+
+      {isOpen && (
+        <div className="absolute right-0 z-50 mt-2 w-44 rounded-2xl border-2 border-border bg-card p-2 shadow-[0_4px_0_0_rgba(61,44,44,0.08)]">
+          <p className="px-3 py-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Akun Aktif
+          </p>
+          <div className="flex items-center gap-3 rounded-2xl bg-muted px-3 py-2 text-sm font-medium text-foreground">
+            <span className={cn("h-2.5 w-2.5 rounded-full", isHasbi ? "bg-primary" : "bg-secondary")} />
+            {displayName}
+          </div>
+          <div className="mt-2 border-t border-border pt-2">
+            <button
+              onClick={handleLogout}
+              className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-destructive/30"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
-            )}
-          </button>
-        </li>
-        <li>
-          <button
-            onClick={() => handleSwitch("nadya")}
-            className={`flex items-center gap-3 w-full px-3 py-2 rounded-lg transition-colors ${
-              currentUser === "nadya"
-                ? "bg-secondary/10 text-secondary"
-                : "hover:bg-base-200 text-base-content"
-            }`}
-          >
-            <span className="w-2.5 h-2.5 rounded-full bg-secondary" />
-            <span className="text-sm font-medium">Nadya</span>
-            {currentUser === "nadya" && (
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            )}
-          </button>
-        </li>
-        <li className="border-t border-base-200 mt-2 pt-2">
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-error hover:bg-error/10 transition-colors"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-            <span className="text-sm font-medium">Logout</span>
-          </button>
-        </li>
-      </ul>
+              Keluar Akun
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

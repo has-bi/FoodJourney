@@ -1,44 +1,83 @@
 "use client";
 
-import { useRef, useActionState } from "react";
+import { useRef, useActionState, useState, useEffect, useCallback, type MouseEvent } from "react";
 import { addPlace } from "@/app/actions/place";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Spinner } from "@/components/ui/spinner";
+import { cn } from "@/lib/utils";
 
 const categories = [
-  { value: "cafe", label: "☕ Cafe", icon: "☕" },
-  { value: "resto", label: "🍽️ Restaurant", icon: "🍽️" },
-  { value: "sushi", label: "🍣 Sushi", icon: "🍣" },
-  { value: "fine_dining", label: "🥂 Fine Dining", icon: "🥂" },
-  { value: "street_food", label: "🍜 Street Food", icon: "🍜" },
-  { value: "dessert", label: "🍰 Dessert", icon: "🍰" },
+  { value: "cafe", label: "Ngopi", icon: "☕" },
+  { value: "resto", label: "Makan", icon: "🍽️" },
+  { value: "sushi", label: "Sushi", icon: "🍣" },
+  { value: "fine_dining", label: "Sultan", icon: "🥂" },
+  { value: "street_food", label: "Kaki Lima", icon: "🍜" },
+  { value: "dessert", label: "Manis", icon: "🍰" },
 ];
 
-export function AddPlaceModal() {
+const occasionTags = [
+  { value: "birthday", label: "🎂 Ultah", description: "Buat ngerayain ultah" },
+  { value: "anniversary", label: "💕 Anniv", description: "Biar date lu romantis" },
+  { value: "rainy_day", label: "🌧️ Ujan-ujanan", description: "Anget-anget mantap" },
+  { value: "hungry_af", label: "😤 Laper Brutal", description: "Porsinya gak ngotak" },
+  { value: "comfort_food", label: "🍜 Healing", description: "Butuh dipeluk makanan" },
+  { value: "budget", label: "💸 Bokek Mode", description: "Tanggal tua aman" },
+  { value: "cheat_day", label: "🍔 Gas Pol", description: "Diet mah besok aja" },
+  { value: "quick_bite", label: "⚡ Buru-buru", description: "Gak pake lama cuy" },
+];
+
+interface AddPlaceModalProps {
+  currentUser?: "hasbi" | "nadya";
+}
+
+export function AddPlaceModal({ currentUser = "hasbi" }: AddPlaceModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const [state, formAction, isPending] = useActionState(addPlace, null);
+  const [visitType, setVisitType] = useState<"solo" | "together">("together");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
-  const openModal = () => {
+  const partnerName = currentUser === "hasbi" ? "Nadya" : "Hasbi";
+
+  const openModal = useCallback(() => {
+    setVisitType("together");
+    setSelectedTags([]);
     dialogRef.current?.showModal();
-  };
+  }, []);
 
-  const closeModal = () => {
+  const closeModal = useCallback(() => {
     dialogRef.current?.close();
     formRef.current?.reset();
+  }, []);
+
+  const toggleTag = (tag: string) => {
+    setSelectedTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+    );
+  };
+
+  const handleBackdropClick = (e: MouseEvent<HTMLDialogElement>) => {
+    if (e.target === dialogRef.current) {
+      closeModal();
+    }
   };
 
   // Close modal on success
-  if (state?.success) {
-    dialogRef.current?.close();
-    formRef.current?.reset();
-  }
+  useEffect(() => {
+    if (state?.success) {
+      closeModal();
+    }
+  }, [state?.success, closeModal]);
 
   return (
     <>
       {/* Floating Action Button */}
       <button
         onClick={openModal}
-        className="btn btn-primary btn-circle fixed bottom-24 right-4 shadow-lg z-30 w-14 h-14"
-        aria-label="Add new place"
+        className="fixed bottom-24 right-4 z-30 h-12 w-12 rounded-full border-2 border-foreground/20 bg-primary text-foreground shadow-[0_4px_0_0_rgba(61,44,44,0.12)] transition-all hover:brightness-[0.98] active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(61,44,44,0.12)]"
+        aria-label="Tambah tempat baru"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -57,46 +96,42 @@ export function AddPlaceModal() {
       </button>
 
       {/* Modal */}
-      <dialog ref={dialogRef} className="modal modal-bottom sm:modal-middle">
-        <div className="modal-box p-0 max-w-md">
+      <dialog ref={dialogRef} className="fixed inset-0 z-50 w-full bg-transparent" onClick={handleBackdropClick}>
+        <div className="flex min-h-full items-end justify-center p-3 sm:items-center sm:p-6 pointer-events-none">
+          <div className="pointer-events-auto w-full max-w-md max-h-[90vh] overflow-hidden overflow-y-auto rounded-3xl border-2 border-border bg-card shadow-[0_6px_0_0_rgba(61,44,44,0.08)]">
           {/* Header */}
-          <div className="p-5 border-b border-base-200">
+          <div className="border-b-2 border-border p-5">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold text-base-content">Add New Place</h3>
-              <button
-                type="button"
-                onClick={closeModal}
-                className="btn btn-ghost btn-sm btn-circle"
-              >
+              <h3 className="text-lg font-medium text-foreground">Nemu Tempat Baru? 🔥</h3>
+              <Button type="button" variant="ghost" size="icon" className="rounded-full" onClick={closeModal}>
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
-              </button>
+              </Button>
             </div>
-            <p className="text-sm text-base-content/60 mt-1">
-              Paste a Google Maps link and we&apos;ll fetch the details
+            <p className="mt-1 text-sm text-muted-foreground">
+              Drop link Google Maps-nya, ntar kita kulik detailnya
             </p>
           </div>
 
-          <form ref={formRef} action={formAction} className="p-5 space-y-5">
+          <form ref={formRef} action={formAction} className="space-y-5 p-5">
             {/* Maps Link Input */}
             <div>
-              <label className="block text-sm font-medium text-base-content mb-2">
-                Google Maps Link
+              <label className="mb-2 block text-sm font-medium text-foreground">
+                Link Google Maps-nya
               </label>
-              <input
+              <Input
                 type="url"
                 name="mapsLink"
                 placeholder="https://maps.google.com/place/..."
-                className="input input-bordered w-full bg-base-100"
                 required
               />
             </div>
 
             {/* Category Selection */}
             <div>
-              <label className="block text-sm font-medium text-base-content mb-2">
-                Category
+              <label className="mb-2 block text-sm font-medium text-foreground">
+                Jenis tempat makan
               </label>
               <div className="grid grid-cols-3 gap-2">
                 {categories.map((cat) => (
@@ -108,67 +143,123 @@ export function AddPlaceModal() {
                       defaultChecked={cat.value === "resto"}
                       className="peer hidden"
                     />
-                    <div className="flex flex-col items-center gap-1 p-3 border border-base-300 rounded-lg peer-checked:border-primary peer-checked:bg-primary/5 transition-all">
+                    <div className="flex flex-col items-center gap-1 rounded-2xl border-2 border-border p-3 transition-all peer-checked:border-foreground/40 peer-checked:bg-muted">
                       <span className="text-xl">{cat.icon}</span>
-                      <span className="text-xs text-base-content/70">{cat.label.split(" ")[1]}</span>
+                      <span className="text-xs text-muted-foreground">{cat.label}</span>
                     </div>
                   </label>
                 ))}
               </div>
             </div>
 
+            {/* Visit Type Selection */}
+            <div>
+              <label className="mb-2 block text-sm font-medium text-foreground">
+                Mau pergi sama siapa nih?
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <label className="cursor-pointer">
+                  <input
+                    type="radio"
+                    name="visitType"
+                    value="solo"
+                    checked={visitType === "solo"}
+                    onChange={() => setVisitType("solo")}
+                    className="peer hidden"
+                  />
+                  <div className="flex items-center justify-center gap-2 rounded-2xl border-2 border-border p-3 transition-all peer-checked:border-foreground/40 peer-checked:bg-muted">
+                    <span className="text-lg">🚶</span>
+                    <span className="text-sm font-medium">Solo aja cuy</span>
+                  </div>
+                </label>
+                <label className="cursor-pointer">
+                  <input
+                    type="radio"
+                    name="visitType"
+                    value="together"
+                    checked={visitType === "together"}
+                    onChange={() => setVisitType("together")}
+                    className="peer hidden"
+                  />
+                  <div className="flex items-center justify-center gap-2 rounded-2xl border-2 border-border p-3 transition-all peer-checked:border-foreground/40 peer-checked:bg-muted">
+                    <span className="text-lg">👫</span>
+                    <span className="text-sm font-medium">Bareng si {partnerName}</span>
+                  </div>
+                </label>
+              </div>
+              {visitType === "together" && (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {partnerName} kudu ACC dulu baru masuk list
+                </p>
+              )}
+            </div>
+
+            {/* Occasion Tags */}
+            <div>
+              <label className="mb-2 block text-sm font-medium text-foreground">
+                Cocoknya buat kapan? <span className="font-normal text-muted-foreground">(opsional)</span>
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {occasionTags.map((tag) => (
+                  <button
+                    key={tag.value}
+                    type="button"
+                    onClick={() => toggleTag(tag.value)}
+                    className={cn(
+                      "rounded-full border-2 px-3 py-1.5 text-xs transition-all",
+                      selectedTags.includes(tag.value)
+                        ? "border-foreground/40 bg-muted font-medium"
+                        : "border-border hover:border-foreground/20"
+                    )}
+                  >
+                    {tag.label}
+                  </button>
+                ))}
+              </div>
+              <input type="hidden" name="tags" value={JSON.stringify(selectedTags)} />
+            </div>
+
             {/* Optional Notes */}
             <div>
-              <label className="block text-sm font-medium text-base-content mb-2">
-                Notes <span className="text-base-content/50 font-normal">(optional)</span>
+              <label className="mb-2 block text-sm font-medium text-foreground">
+                Catetan <span className="font-normal text-muted-foreground">(opsional)</span>
               </label>
-              <textarea
+              <Textarea
                 name="notes"
-                placeholder="e.g., Must try their signature dish! or Recommended by a friend"
-                className="textarea textarea-bordered w-full bg-base-100 h-20 text-sm"
+                placeholder="Wajib cobain ini! atau rekomendasi dari si anu..."
+                className="h-20 text-sm"
               />
             </div>
 
             {/* Error Message */}
             {state?.error && (
-              <div className="bg-error/10 border border-error/20 text-error text-sm rounded-lg p-3">
+              <div className="rounded-2xl border-2 border-foreground/20 bg-destructive/30 p-3 text-sm text-foreground">
                 {state.error}
               </div>
             )}
 
             {/* Loading State Info */}
             {isPending && (
-              <div className="bg-info/10 border border-info/20 text-info text-sm rounded-lg p-3">
+              <div className="rounded-2xl border-2 border-border bg-muted p-3 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
-                  <span className="loading loading-spinner loading-sm"></span>
-                  <span>Searching for restaurant info...</span>
+                  <Spinner size="sm" />
+                  <span>Lagi nyari info restonya nih, bentar...</span>
                 </div>
               </div>
             )}
 
             {/* Actions */}
             <div className="flex gap-3 pt-2">
-              <button
-                type="button"
-                className="btn btn-ghost flex-1"
-                onClick={closeModal}
-                disabled={isPending}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="btn btn-primary flex-1"
-                disabled={isPending}
-              >
-                {isPending ? "Adding..." : "Add Place"}
-              </button>
+              <Button type="button" variant="ghost" className="flex-1" onClick={closeModal} disabled={isPending}>
+                Gajadi
+              </Button>
+              <Button type="submit" className="flex-1" disabled={isPending}>
+                {isPending ? "Bentar..." : "Gas Masukin! 🚀"}
+              </Button>
             </div>
           </form>
+          </div>
         </div>
-        <form method="dialog" className="modal-backdrop">
-          <button>close</button>
-        </form>
       </dialog>
     </>
   );

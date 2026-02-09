@@ -2,6 +2,8 @@
 
 import { useTransition } from "react";
 import { approvePlace, skipPlace } from "@/app/actions/place";
+import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 
 interface ApprovalButtonsProps {
   placeId: string;
@@ -23,25 +25,13 @@ export function ApprovalButtons({ placeId }: ApprovalButtonsProps) {
   };
 
   return (
-    <div className="card-actions justify-end mt-3">
-      <button
-        className="btn btn-sm btn-ghost"
-        onClick={handleSkip}
-        disabled={isPending}
-      >
-        Skip
-      </button>
-      <button
-        className="btn btn-sm btn-primary"
-        onClick={handleApprove}
-        disabled={isPending}
-      >
-        {isPending ? (
-          <span className="loading loading-spinner loading-xs"></span>
-        ) : (
-          "Plan It"
-        )}
-      </button>
+    <div className="mt-3 flex items-center justify-end gap-2">
+      <Button variant="ghost" size="sm" onClick={handleSkip} disabled={isPending}>
+        Ogah
+      </Button>
+      <Button size="sm" onClick={handleApprove} disabled={isPending}>
+        {isPending ? <Spinner size="xs" /> : "Gas! 🔥"}
+      </Button>
     </div>
   );
 }

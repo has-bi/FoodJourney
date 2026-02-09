@@ -1,7 +1,8 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import type { ExtractedPlaceInfo } from "./types";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+const geminiApiKey = process.env.GEMINI_API_KEY;
+const genAI = geminiApiKey ? new GoogleGenerativeAI(geminiApiKey) : null;
 
 // Extract place name from URL
 function extractPlaceName(url: string): string {
@@ -34,6 +35,25 @@ export async function extractPlaceInfo(
 ): Promise<ExtractedPlaceInfo> {
   const placeName = extractPlaceName(mapsLink);
   const coordinates = extractCoordinates(mapsLink);
+
+  if (!genAI) {
+    console.warn("GEMINI_API_KEY is missing. Using fallback place data.");
+    return {
+      name: placeName,
+      cuisine: "Not available",
+      area: "Not available",
+      priceRange: "Not available",
+      priceCategory: "moderate",
+      signatureMenus: [],
+      rating: null,
+      reviewCount: null,
+      commonComplaint: "No complaints found",
+      waitTime: "Not available",
+      parkingInfo: "Not available",
+      operatingHours: "Not available",
+      confidence: "low",
+    };
+  }
 
   // Use Gemini 2.5-flash with Google Search grounding
   const model = genAI.getGenerativeModel({
@@ -166,7 +186,7 @@ Return ONLY the JSON object.
     // Map to our ExtractedPlaceInfo type
     return {
       name: parsed.name || placeName,
-      cuisine: parsed.cuisine || "Restaurant",
+      cuisine: parsed.cuisine || "Not available",
       area: parsed.area || "Not available",
       priceRange: parsed.priceRange || "Not available",
       priceCategory: parsed.priceCategory || "moderate",
@@ -175,7 +195,7 @@ Return ONLY the JSON object.
             .filter((m: { name?: string }) => m && m.name)
             .map((m: { name: string; price?: string }) => ({
               name: m.name,
-              price: m.price || "N/A",
+              price: m.price || undefined,
             }))
         : [],
       rating: !isNaN(rating) && rating > 0 && rating <= 5 ? rating : null,
@@ -192,14 +212,14 @@ Return ONLY the JSON object.
     // Return minimal data without hallucination
     return {
       name: placeName,
-      cuisine: "Restaurant",
+      cuisine: "Not available",
       area: "Not available",
       priceRange: "Not available",
       priceCategory: "moderate",
       signatureMenus: [],
       rating: null,
       reviewCount: null,
-      commonComplaint: "Could not fetch reviews",
+      commonComplaint: "No complaints found",
       waitTime: "Not available",
       parkingInfo: "Not available",
       operatingHours: "Not available",

@@ -1,7 +1,11 @@
 "use client";
 
 import { useActionState } from "react";
+import Image from "next/image";
 import { login } from "@/app/actions/auth";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
 
 export default function LoginPage() {
   const [state, formAction, isPending] = useActionState(login, null);
@@ -10,20 +14,20 @@ export default function LoginPage() {
     <div className="w-full max-w-sm">
       {/* Logo & Title */}
       <div className="text-center mb-8">
-        <div className="text-5xl mb-3">🍽️</div>
-        <h1 className="text-2xl font-bold text-base-content">FoodJourney</h1>
-        <p className="text-sm text-base-content/60 mt-1">
-          Track your culinary adventures together
+        <Image src="/assets/pixel-plate.svg" alt="" aria-hidden="true" width={56} height={56} className="mx-auto mb-3 h-14 w-14" />
+        <h1 className="text-2xl font-medium text-foreground">FoodJourney</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Catetan kuliner bareng pasangan, auto anti bingung 🔥
         </p>
       </div>
 
       {/* Login Card */}
-      <div className="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-6">
+      <div className="rounded-3xl border-2 border-border bg-card p-6 shadow-[0_6px_0_0_rgba(61,44,44,0.08)]">
         <form action={formAction} className="space-y-5">
           {/* User Selection */}
           <div>
-            <label className="block text-sm font-medium text-base-content mb-3">
-              Who are you?
+            <label className="mb-3 block text-sm font-medium text-foreground">
+              Lu login jadi siapa?
             </label>
             <div className="grid grid-cols-2 gap-3">
               <label className="cursor-pointer">
@@ -34,11 +38,11 @@ export default function LoginPage() {
                   className="peer hidden"
                   defaultChecked
                 />
-                <div className="flex flex-col items-center gap-2 p-4 border-2 border-base-300 rounded-xl peer-checked:border-primary peer-checked:bg-primary/5 transition-all">
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                <div className="flex flex-col items-center gap-2 rounded-2xl border-2 border-border p-4 transition-all peer-checked:border-foreground/40 peer-checked:bg-muted">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
                     <span className="text-2xl">👨</span>
                   </div>
-                  <span className="font-medium text-base-content">Hasbi</span>
+                  <span className="font-medium text-foreground">Hasbi</span>
                 </div>
               </label>
               <label className="cursor-pointer">
@@ -48,11 +52,11 @@ export default function LoginPage() {
                   value="nadya"
                   className="peer hidden"
                 />
-                <div className="flex flex-col items-center gap-2 p-4 border-2 border-base-300 rounded-xl peer-checked:border-secondary peer-checked:bg-secondary/5 transition-all">
-                  <div className="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center">
+                <div className="flex flex-col items-center gap-2 rounded-2xl border-2 border-border p-4 transition-all peer-checked:border-foreground/40 peer-checked:bg-muted">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
                     <span className="text-2xl">👩</span>
                   </div>
-                  <span className="font-medium text-base-content">Nadya</span>
+                  <span className="font-medium text-foreground">Nadya</span>
                 </div>
               </label>
             </div>
@@ -60,40 +64,35 @@ export default function LoginPage() {
 
           {/* Password */}
           <div>
-            <label className="block text-sm font-medium text-base-content mb-2">
-              Password
+            <label className="mb-2 block text-sm font-medium text-foreground">
+              Password Rahasia
             </label>
-            <input
+            <Input
               type="password"
               name="password"
-              placeholder="Enter shared password"
-              className="w-full px-4 py-3 border border-base-300 rounded-xl bg-base-100 text-base-content placeholder:text-base-content/40 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+              placeholder="Masukin password lu..."
               required
             />
           </div>
 
           {/* Error */}
           {state?.error && (
-            <div className="bg-error/10 border border-error/20 text-error text-sm rounded-xl p-3 text-center">
+            <div className="rounded-2xl border-2 border-foreground/20 bg-destructive/30 p-3 text-center text-sm text-foreground">
               {state.error}
             </div>
           )}
 
           {/* Submit */}
-          <button
-            type="submit"
-            className="w-full py-3 bg-primary text-primary-content font-medium rounded-xl hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-            disabled={isPending}
-          >
+          <Button type="submit" className="h-11 w-full" disabled={isPending}>
             {isPending ? (
               <span className="flex items-center justify-center gap-2">
-                <span className="loading loading-spinner loading-sm"></span>
-                Signing in...
+                <Spinner size="sm" />
+                Bentar...
               </span>
             ) : (
-              "Sign In"
+              "Masuk! 🚀"
             )}
-          </button>
+          </Button>
         </form>
       </div>
     </div>

@@ -1,8 +1,12 @@
+import { compareSync } from "bcryptjs";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import type { SessionPayload, Username } from "./types";
 
 const secretKey = process.env.AUTH_SECRET;
+if (!secretKey) {
+  throw new Error("AUTH_SECRET is required");
+}
 const encodedKey = new TextEncoder().encode(secretKey);
 
 export async function createSession(currentUser: Username) {
@@ -56,15 +60,10 @@ export async function getCurrentUser(): Promise<Username | null> {
   return session?.currentUser ?? null;
 }
 
-export async function setCurrentUser(username: Username) {
-  const session = await getSession();
-  if (session) {
-    await createSession(username);
-  }
-}
-
 export function verifyPassword(inputPassword: string, storedPassword: string): boolean {
-  // Simple comparison for MVP
-  // In production, use bcrypt.compare with hashed password
+  // Support bcrypt hashes in production while keeping legacy plaintext compatibility.
+  if (storedPassword.startsWith("$2a$") || storedPassword.startsWith("$2b$") || storedPassword.startsWith("$2y$")) {
+    return compareSync(inputPassword, storedPassword);
+  }
   return inputPassword === storedPassword;
 }

@@ -1,36 +1,89 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# FoodJourney
 
-## Getting Started
+Aplikasi catatan kuliner berdua (Hasbi & Nadya) dengan:
+- Next.js App Router
+- Prisma + PostgreSQL (Neon)
+- Auth berbasis cookie session
+- Integrasi Gemini buat ekstraksi data tempat
+- Cloudflare R2 buat upload foto kunjungan
 
-First, run the development server:
+## 1) Local Setup
+### Prasyarat
+- Node.js 20+
+- npm
+- Bun (buat jalanin seed script)
+- Database PostgreSQL (Neon direkomendasikan)
 
+### Env
+Copy template env:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp .env.example .env.local
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Isi semua variabel di `.env.local`:
+- `DATABASE_URL`
+- `DIRECT_URL` (opsional, tapi direkomendasikan)
+- `AUTH_SECRET`
+- `GEMINI_API_KEY`
+- `R2_ENDPOINT`
+- `R2_ACCESS_KEY_ID`
+- `R2_SECRET_ACCESS_KEY`
+- `R2_BUCKET_NAME`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Install & run
+```bash
+npm install
+npm run db:push
+npm run db:seed
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Buka `http://localhost:3000`.
 
-## Learn More
+## 2) Deploy ke Vercel
+### Project Settings
+- Framework: Next.js
+- Build Command: `npm run build`
+- Install Command: `npm install`
+- Output: default Next.js
 
-To learn more about Next.js, take a look at the following resources:
+### Environment Variables (Production)
+Set semua env ini di Vercel Project > Settings > Environment Variables:
+- `DATABASE_URL`
+- `DIRECT_URL` (opsional, fallback ke `DATABASE_URL` kalau kosong)
+- `AUTH_SECRET`
+- `GEMINI_API_KEY`
+- `R2_ENDPOINT`
+- `R2_ACCESS_KEY_ID`
+- `R2_SECRET_ACCESS_KEY`
+- `R2_BUCKET_NAME`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Deploy Flow
+1. Push branch ke GitHub.
+2. Import repo ke Vercel.
+3. Set env variables.
+4. Deploy.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 3) Post-Deploy Checklist
+1. Jalankan migrasi schema ke database production:
+```bash
+npm run db:push
+```
+2. Seed data awal (users + config password):
+```bash
+npm run db:seed
+```
+3. Cek login Hasbi/Nadya.
+4. Cek upload foto (R2).
+5. Cek fitur pesan 1 baris di halaman `Rencana`.
 
-## Deploy on Vercel
+## 4) Security Notes
+- Jangan commit `.env`, `.env.local`, atau secret apa pun.
+- Rotate key kalau pernah ketulis di repo/commit lama.
+- `AUTH_SECRET` wajib random kuat (minimal 32 bytes).
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 5) Troubleshooting Cepat
+- Error auth/session: pastiin `AUTH_SECRET` terisi.
+- Error database: cek `DATABASE_URL` / `DIRECT_URL`.
+- Error upload foto: cek semua env `R2_*`.
+- Error Gemini: cek `GEMINI_API_KEY`.

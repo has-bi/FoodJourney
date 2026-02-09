@@ -1,116 +1,91 @@
 @import "tailwindcss";
-@plugin "daisyui";
 
 @theme inline {
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  --color-background: #fff7f0;
+  --color-foreground: #3d2c2c;
+  --color-card: #fffdf9;
+  --color-card-foreground: #3d2c2c;
+  --color-muted: #fbe8de;
+  --color-muted-foreground: #7a5b5b;
+  --color-border: #f1d8cc;
+  --color-input: #f1d8cc;
+  --color-ring: #a5b4fc;
+
+  --color-primary: #a5b4fc;
+  --color-primary-foreground: #3d2c2c;
+  --color-secondary: #f9a8d4;
+  --color-secondary-foreground: #3d2c2c;
+  --color-accent: #fdba74;
+  --color-accent-foreground: #3d2c2c;
+  --color-destructive: #fca5a5;
+  --color-destructive-foreground: #3d2c2c;
+
+  --color-success: #86efac;
+  --color-success-foreground: #3d2c2c;
+  --color-warning: #fcd34d;
+  --color-warning-foreground: #3d2c2c;
+  --color-info: #93c5fd;
+  --color-info-foreground: #3d2c2c;
 }
 
-/* FoodJourney Light Theme */
-:root {
-  /* Base colors - clean white backgrounds */
-  --color-base-100: #ffffff;
-  --color-base-200: #f8fafc;
-  --color-base-300: #f1f5f9;
-  --color-base-content: #1e293b;
-
-  /* Primary - Indigo (Hasbi) */
-  --color-primary: #4f46e5;
-  --color-primary-content: #ffffff;
-
-  /* Secondary - Pink (Nadya) */
-  --color-secondary: #db2777;
-  --color-secondary-content: #ffffff;
-
-  /* Accent - Teal */
-  --color-accent: #0d9488;
-  --color-accent-content: #ffffff;
-
-  /* Neutral - Dark slate for text */
-  --color-neutral: #334155;
-  --color-neutral-content: #ffffff;
-
-  /* Status colors */
-  --color-success: #16a34a;
-  --color-success-content: #ffffff;
-  --color-warning: #ca8a04;
-  --color-warning-content: #ffffff;
-  --color-error: #dc2626;
-  --color-error-content: #ffffff;
-  --color-info: #0284c7;
-  --color-info-content: #ffffff;
-
-  /* User colors */
-  --color-hasbi: #4f46e5;
-  --color-nadya: #db2777;
-}
-
-/* Ensure light theme */
 html {
   color-scheme: light;
 }
 
-/* Base body styles */
 body {
-  font-family: var(--font-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background-color: var(--color-base-200);
-  color: var(--color-base-content);
+  font-family: var(--font-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background-color: var(--color-background);
+  color: var(--color-foreground);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Card improvements */
-.card {
-  background-color: var(--color-base-100);
+dialog {
+  border: none;
+  padding: 0;
+  margin: 0;
+  background: transparent;
 }
 
-/* Modal backdrop */
-.modal-backdrop {
-  background-color: rgba(0, 0, 0, 0.4);
+dialog::backdrop {
+  background-color: rgb(61 44 44 / 0.18);
   backdrop-filter: blur(2px);
 }
 
-/* Better badge contrast */
-.badge-outline {
-  border-color: var(--color-neutral);
-  color: var(--color-neutral);
-}
-
-/* Mobile safe areas */
 .safe-bottom {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
-/* Smooth transitions */
-.card, .btn, .badge {
-  transition: all 0.15s ease-in-out;
+.card-clickable {
+  transition: transform 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
 }
 
-/* Card hover effect */
 .card-clickable:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 16px -14px rgb(15 23 42 / 0.25);
 }
 
 .card-clickable:active {
   transform: translateY(0);
 }
 
-/* Better scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--color-base-200);
+  background: var(--color-muted);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-base-300);
+  background: var(--color-border);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-neutral);
+  background: var(--color-muted-foreground);
 }

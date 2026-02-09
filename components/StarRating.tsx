@@ -1,5 +1,7 @@
 "use client";
 
+import { cn } from "@/lib/utils";
+
 interface StarRatingProps {
   rating: number;
   onChange: (rating: number) => void;
@@ -8,16 +10,20 @@ interface StarRatingProps {
 
 export function StarRating({ rating, onChange, max = 5 }: StarRatingProps) {
   return (
-    <div className="rating rating-lg">
+    <div className="flex gap-1">
       {Array.from({ length: max }, (_, i) => (
-        <input
+        <button
           key={i}
-          type="radio"
-          name="rating"
-          className="mask mask-star-2 bg-warning"
-          checked={rating === i + 1}
-          onChange={() => onChange(i + 1)}
-        />
+          type="button"
+          aria-label={`Rate ${i + 1}`}
+          onClick={() => onChange(i + 1)}
+          className={cn(
+            "text-2xl transition-transform",
+            rating >= i + 1 ? "text-foreground" : "text-muted-foreground/50"
+          )}
+        >
+          ★
+        </button>
       ))}
     </div>
   );

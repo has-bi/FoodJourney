@@ -5,6 +5,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -42,9 +43,9 @@ model Place {
 
   // Practical info
   commonComplaint String?   @map("common_complaint")
-  waitTime        String?   @map("wait_time") @db.VarChar(50)
-  parkingInfo     String?   @map("parking_info") @db.VarChar(100)
-  operatingHours  String?   @map("operating_hours") @db.VarChar(100)
+  waitTime        String?   @map("wait_time") @db.VarChar(200)
+  parkingInfo     String?   @map("parking_info") @db.VarChar(200)
+  operatingHours  String?   @map("operating_hours") @db.VarChar(200)
 
   // AI confidence
   aiConfidence    String?   @map("ai_confidence") @db.VarChar(10) // high/medium/low
@@ -62,9 +63,64 @@ model Place {
   // Notes when suggesting
   suggestedNotes String? @map("suggested_notes")
 
-  // After visit
+  // Visit type - solo or together
+  visitType     VisitType @default(together) @map("visit_type")
+  inviteStatus  InviteStatus? @map("invite_status") // For together visits
+
+  // Preference tags - stored as JSON array
+  // e.g., ["birthday", "rainy_day", "hungry_af", "comfort_food"]
+  tags          Json?     @map("tags")
+
+  // Legacy fields (kept for backward compatibility, will migrate to Visit model)
+  // After visit - DEPRECATED: use visits relation instead
   visitedAt DateTime? @map("visited_at")
   photoUrl  String?   @map("photo_url")
+
+  // Hasbi's review - DEPRECATED: use visits relation instead
+  hasbiRating Int?    @map("hasbi_rating")
+  hasbiNotes  String? @map("hasbi_notes")
+  hasbiReviewedAt DateTime? @map("hasbi_reviewed_at")
+
+  // Nadya's review - DEPRECATED: use visits relation instead
+  nadyaRating Int?    @map("nadya_rating")
+  nadyaNotes  String? @map("nadya_notes")
+  nadyaReviewedAt DateTime? @map("nadya_reviewed_at")
+
+  // Visits - multiple visits per place
+  visits    Visit[]
+
+  // Computed/cached stats (updated when visits change)
+  visitCount    Int @default(0) @map("visit_count")
+  avgHasbiRating Float? @map("avg_hasbi_rating")
+  avgNadyaRating Float? @map("avg_nadya_rating")
+  lastVisitedAt DateTime? @map("last_visited_at")
+
+  // Content tracking (Hasbi only)
+  hasbiContentCreated Boolean @default(false) @map("hasbi_content_created")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([addedById])
+  @@index([category])
+  @@index([lastVisitedAt(sort: Desc)])
+  @@map("places")
+}
+
+model Visit {
+  id        String    @id @default(uuid())
+  place     Place     @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  placeId   String    @map("place_id")
+
+  // Visit info
+  visitedAt DateTime  @map("visited_at")
+  photoUrl  String?   @map("photo_url")
+  visitType VisitType @default(together) @map("visit_type")
+
+  // What we ordered - stored as JSON array
+  // e.g., [{name: "Nasi Goreng", notes: "Enak banget!"}]
+  orderedItems Json?   @map("ordered_items")
 
   // Hasbi's review
   hasbiRating Int?    @map("hasbi_rating")
@@ -79,11 +135,9 @@ model Place {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  @@index([status])
-  @@index([addedById])
-  @@index([category])
+  @@index([placeId])
   @@index([visitedAt(sort: Desc)])
-  @@map("places")
+  @@map("visits")
 }
 
 model AppConfig {
@@ -109,4 +163,15 @@ enum PlaceCategory {
   fine_dining
   street_food
   dessert
+}
+
+enum VisitType {
+  solo
+  together
+}
+
+enum InviteStatus {
+  pending
+  accepted
+  declined
 }

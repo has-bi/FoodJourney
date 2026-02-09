@@ -1,14 +1,23 @@
 "use client";
 
-import { useRef, useState, useTransition, useEffect } from "react";
-import type { PlaceWithUser, Username } from "@/lib/types";
-import { addVisitReview } from "@/app/actions/place";
+import { useRef, useState, useTransition, useEffect, type ChangeEvent, type FormEvent, type MouseEvent } from "react";
+import Image from "next/image";
+import type { PlaceWithUser, Username, OrderedItem, Visit } from "@/lib/types";
+import { addVisitReview, createNewVisit } from "@/app/actions/place";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Spinner } from "@/components/ui/spinner";
+import { cn } from "@/lib/utils";
+import { getImageUrl } from "@/lib/image-url";
 
 interface ArchiveModalProps {
   place: PlaceWithUser;
   currentUser: Username;
   onClose: () => void;
   onSuccess?: () => void;
+  existingVisit?: Visit; // If adding review to existing visit
+  isNewVisit?: boolean; // If creating a new visit for archived place
 }
 
 export function ArchiveModal({
@@ -16,50 +25,76 @@ export function ArchiveModal({
   currentUser,
   onClose,
   onSuccess,
+  existingVisit,
+  isNewVisit = false,
 }: ArchiveModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isPending, startTransition] = useTransition();
 
-  // Check if partner already reviewed
-  const partnerReviewed = currentUser === "hasbi"
-    ? place.nadyaRating !== null
-    : place.hasbiRating !== null;
+  // Check visit type
+  const isSolo = place.visitType === "solo";
 
-  // Check if photo already exists
-  const hasExistingPhoto = !!place.photoUrl;
-  const hasExistingDate = !!place.visitedAt;
+  // For existing visit, check if partner reviewed that visit
+  // For new flow, check the latest visit
+  const partnerReviewed = !isSolo && existingVisit
+    ? (currentUser === "hasbi" ? existingVisit.nadyaRating !== null : existingVisit.hasbiRating !== null)
+    : !isSolo && (currentUser === "hasbi" ? place.nadyaRating !== null : place.hasbiRating !== null);
+
+  // Check if photo already exists (for existing visit)
+  const hasExistingPhoto = existingVisit ? !!existingVisit.photoUrl : !!place.photoUrl;
+  const hasExistingDate = existingVisit ? !!existingVisit.visitedAt : !!place.visitedAt;
 
   const [visitDate, setVisitDate] = useState(
-    hasExistingDate
-      ? new Date(place.visitedAt!).toISOString().split("T")[0]
+    hasExistingDate && !isNewVisit
+      ? new Date(existingVisit?.visitedAt || place.visitedAt!).toISOString().split("T")[0]
       : new Date().toISOString().split("T")[0]
   );
   const [rating, setRating] = useState(0);
   const [notes, setNotes] = useState("");
   const [photoPreview, setPhotoPreview] = useState<string | null>(
-    hasExistingPhoto ? place.photoUrl : null
+    hasExistingPhoto && !isNewVisit ? getImageUrl(existingVisit?.photoUrl || place.photoUrl || "") : null
   );
   const [error, setError] = useState<string | null>(null);
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  // Ordered items state
+  const [orderedItems, setOrderedItems] = useState<OrderedItem[]>([]);
+  const [newItemName, setNewItemName] = useState("");
+  const [newItemNote, setNewItemNote] = useState("");
+
+  const addOrderedItem = () => {
+    if (!newItemName.trim()) return;
+    setOrderedItems([
+      ...orderedItems,
+      { name: newItemName.trim(), notes: newItemNote.trim() || undefined },
+    ]);
+    setNewItemName("");
+    setNewItemNote("");
+  };
+
+  const removeOrderedItem = (index: number) => {
+    setOrderedItems(orderedItems.filter((_, i) => i !== index));
+  };
 
   // Open modal on mount
   useEffect(() => {
     dialogRef.current?.showModal();
   }, []);
 
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     // Validate file type
     if (!file.type.startsWith("image/")) {
-      setError("Please select an image file");
+      setError("Pilih file gambar dong, cuy");
       return;
     }
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      setError("Image must be less than 5MB");
+      setError("Ukuran gambar maksimal 5MB ya");
       return;
     }
 
@@ -72,38 +107,60 @@ export function ArchiveModal({
     reader.readAsDataURL(file);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
 
     if (rating === 0) {
-      setError("Please select a rating");
+      setError("Kasih bintang dulu, jangan kosong");
       return;
     }
 
     startTransition(async () => {
       // Only send new photo if it's different from existing
-      const newPhoto = photoPreview !== place.photoUrl ? photoPreview : undefined;
+      const existingPhotoDisplay = getImageUrl(existingVisit?.photoUrl || place.photoUrl || "");
+      const newPhoto = photoPreview !== existingPhotoDisplay ? photoPreview : undefined;
 
-      const result = await addVisitReview(
-        place.id,
-        currentUser,
-        new Date(visitDate),
-        rating,
-        notes,
-        newPhoto || undefined
-      );
+      let result;
+
+      if (isNewVisit) {
+        // Creating a brand new visit for an archived place
+        result = await createNewVisit(
+          place.id,
+          currentUser,
+          new Date(visitDate),
+          rating,
+          notes,
+          newPhoto || undefined,
+          orderedItems.length > 0 ? orderedItems : undefined
+        );
+      } else {
+        // Adding review to planned place or existing visit
+        result = await addVisitReview(
+          place.id,
+          currentUser,
+          new Date(visitDate),
+          rating,
+          notes,
+          newPhoto || undefined,
+          orderedItems.length > 0 ? orderedItems : undefined,
+          existingVisit?.id
+        );
+      }
 
       if (result.error) {
         setError(result.error);
       } else {
         onSuccess?.();
-        onClose();
+        setShowSuccess(true);
+        setTimeout(() => {
+          onClose();
+        }, 2500);
       }
     });
   };
 
-  const handleBackdropClick = (e: React.MouseEvent) => {
+  const handleBackdropClick = (e: MouseEvent<HTMLDialogElement>) => {
     if (e.target === dialogRef.current) {
       onClose();
     }
@@ -112,26 +169,47 @@ export function ArchiveModal({
   const displayName = currentUser === "hasbi" ? "Hasbi" : "Nadya";
   const partnerName = currentUser === "hasbi" ? "Nadya" : "Hasbi";
   const userColor = currentUser === "hasbi" ? "text-primary" : "text-secondary";
+  const partnerAccent = "bg-muted border-border";
+  const partnerDot = currentUser === "hasbi" ? "bg-secondary" : "bg-primary";
 
   return (
     <dialog
       ref={dialogRef}
-      className="modal modal-bottom sm:modal-middle"
+      className="fixed inset-0 z-50 w-full bg-transparent"
       onClick={handleBackdropClick}
     >
-      <div className="modal-box max-w-md p-0 overflow-hidden">
+      <div className="flex min-h-full items-end justify-center p-3 sm:items-center sm:p-6 pointer-events-none">
+        <div className="pointer-events-auto w-full max-w-md max-h-[90vh] overflow-hidden overflow-y-auto rounded-3xl border-2 border-border bg-card shadow-[0_6px_0_0_rgba(61,44,44,0.08)]">
+
+        {showSuccess ? (
+          <div className="flex flex-col items-center justify-center p-10 text-center gap-4">
+            <span className="text-5xl animate-bounce">🤤</span>
+            <h3 className="text-xl font-bold text-foreground">
+              Buset, shedep bener makanannyoooo
+            </h3>
+            <p className="text-sm text-muted-foreground">{place.name} udah masuk catetan!</p>
+            <div className="flex gap-1 mt-1">
+              {Array.from({ length: rating }).map((_, i) => (
+                <span key={i} className="text-lg">⭐</span>
+              ))}
+            </div>
+          </div>
+        ) : (<>
+
         {/* Header */}
-        <div className="bg-gradient-to-r from-primary/10 to-secondary/10 p-5 border-b border-base-200">
+        <div className="border-b-2 border-border bg-card p-5">
           <div className="flex justify-between items-start">
             <div className="flex-1">
-              <h3 className="text-lg font-bold text-base-content">
-                {partnerReviewed ? "Add Your Review" : "Mark as Visited"}
+              <h3 className="text-lg font-medium text-foreground">
+                {isNewVisit ? "Mampir Lagi Nih! 🔄" : partnerReviewed ? "Giliran Lu Review! 📝" : "Udah Mampir Belom? 🍽️"}
               </h3>
-              <p className="text-sm text-base-content/60 mt-1">{place.name}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{place.name}</p>
             </div>
-            <button
+            <Button
               onClick={onClose}
-              className="btn btn-ghost btn-sm btn-circle"
+              variant="ghost"
+              size="icon"
+              className="rounded-full"
               disabled={isPending}
             >
               <svg
@@ -148,18 +226,18 @@ export function ArchiveModal({
                   d="M6 18L18 6M6 6l12 12"
                 />
               </svg>
-            </button>
+            </Button>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-5 space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-5 p-5">
           {/* Partner's review status */}
           {partnerReviewed && (
-            <div className={`bg-${currentUser === "hasbi" ? "secondary" : "primary"}/10 border border-${currentUser === "hasbi" ? "secondary" : "primary"}/20 rounded-lg p-3`}>
+            <div className={cn("rounded-2xl border-2 p-3", partnerAccent)}>
               <div className="flex items-center gap-2">
-                <span className={`w-2.5 h-2.5 rounded-full ${currentUser === "hasbi" ? "bg-secondary" : "bg-primary"}`} />
-                <span className="text-sm font-medium">{partnerName} already reviewed</span>
-                <span className="text-warning text-sm ml-auto">
+                <span className={cn("h-2.5 w-2.5 rounded-full", partnerDot)} />
+                <span className="text-sm font-medium">{partnerName} udah review duluan nih</span>
+                <span className="text-foreground text-sm ml-auto">
                   {"★".repeat(currentUser === "hasbi" ? (place.nadyaRating || 0) : (place.hasbiRating || 0))}
                 </span>
               </div>
@@ -168,31 +246,37 @@ export function ArchiveModal({
 
           {/* Photo Upload - only show upload option if no existing photo */}
           <div>
-            <label className="block text-sm font-medium text-base-content mb-2">
-              Photo {hasExistingPhoto ? "(already uploaded)" : "(shared between both)"}
+            <label className="mb-2 block text-sm font-medium text-foreground">
+              Foto {hasExistingPhoto && !isNewVisit ? "(udah ada)" : "📸"}
             </label>
             <div
               onClick={() => !hasExistingPhoto && fileInputRef.current?.click()}
-              className={`border-2 border-dashed border-base-300 rounded-xl p-4 text-center transition-colors ${
+              className={cn(
+                "rounded-2xl border-2 border-dashed border-border p-4 text-center transition-colors",
                 hasExistingPhoto ? "cursor-default" : "cursor-pointer hover:border-primary/50"
-              }`}
+              )}
             >
               {photoPreview ? (
                 <div className="relative">
-                  <img
+                  <Image
                     src={photoPreview}
-                    alt="Preview"
-                    className="w-full h-40 object-cover rounded-lg"
+                    alt="Preview foto"
+                    width={800}
+                    height={320}
+                    unoptimized
+                    className="w-full h-40 rounded-2xl object-cover"
                   />
                   {!hasExistingPhoto && (
-                    <button
+                    <Button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         setPhotoPreview(null);
                         if (fileInputRef.current) fileInputRef.current.value = "";
                       }}
-                      className="absolute top-2 right-2 btn btn-circle btn-sm btn-error"
+                      variant="destructive"
+                      size="icon"
+                      className="absolute right-2 top-2 h-7 w-7 rounded-full"
                     >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -208,14 +292,14 @@ export function ArchiveModal({
                           d="M6 18L18 6M6 6l12 12"
                         />
                       </svg>
-                    </button>
+                    </Button>
                   )}
                 </div>
               ) : (
                 <div className="py-4">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    className="h-10 w-10 mx-auto text-base-content/30"
+                    className="mx-auto h-10 w-10 text-muted-foreground/60"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -227,8 +311,8 @@ export function ArchiveModal({
                       d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
                     />
                   </svg>
-                  <p className="text-sm text-base-content/50 mt-2">
-                    Tap to upload a photo
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Tap sini buat upload foto
                   </p>
                 </div>
               )}
@@ -246,37 +330,129 @@ export function ArchiveModal({
 
           {/* Visit Date - only editable if not already set */}
           <div>
-            <label className="block text-sm font-medium text-base-content mb-2">
-              Visit Date {hasExistingDate ? "(set by partner)" : ""}
+            <label className="mb-2 block text-sm font-medium text-foreground">
+              Tanggal mampir {hasExistingDate && !isNewVisit ? "(udah diisi)" : "📅"}
             </label>
-            <input
+            <Input
               type="date"
               value={visitDate}
               onChange={(e) => setVisitDate(e.target.value)}
               max={new Date().toISOString().split("T")[0]}
-              className="input input-bordered w-full bg-base-100"
               required
-              disabled={hasExistingDate}
+              disabled={hasExistingDate && !isNewVisit}
             />
           </div>
 
+          {/* Ordered Items - Pesen apa aja? */}
+          <div>
+            <label className="mb-2 block text-sm font-medium text-foreground">
+              Pesen apa aja? 🍽️
+            </label>
+
+            {/* Added items list */}
+            {orderedItems.length > 0 && (
+              <div className="mb-3 space-y-2">
+                {orderedItems.map((item, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between rounded-xl bg-muted px-3 py-2"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm font-medium">{item.name}</span>
+                      {item.notes && (
+                        <span className="ml-2 text-xs text-muted-foreground">
+                          - {item.notes}
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeOrderedItem(index)}
+                      className="ml-2 text-muted-foreground hover:text-destructive"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-4 w-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Add new item form */}
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <Input
+                  value={newItemName}
+                  onChange={(e) => setNewItemName(e.target.value)}
+                  placeholder="Nama menu yang dipesen"
+                  className="flex-1"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addOrderedItem();
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addOrderedItem}
+                  disabled={!newItemName.trim()}
+                  className="shrink-0"
+                >
+                  +
+                </Button>
+              </div>
+              {newItemName && (
+                <Input
+                  value={newItemNote}
+                  onChange={(e) => setNewItemNote(e.target.value)}
+                  placeholder="Catetan (opsional): Enak parah, kebanyakan garam..."
+                  className="text-sm"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addOrderedItem();
+                    }
+                  }}
+                />
+              )}
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Catat menu favorit biar inget pas balik lagi! 😋
+            </p>
+          </div>
+
           {/* Rating Header */}
-          <div className="bg-base-200 rounded-xl p-4">
-            <div className="flex items-center gap-2 mb-3">
+          <div className="rounded-2xl bg-muted p-4">
+            <div className="mb-3 flex items-center gap-2">
               <span
-                className={`w-3 h-3 rounded-full ${
+                className={`h-3 w-3 rounded-full ${
                   currentUser === "hasbi" ? "bg-primary" : "bg-secondary"
                 }`}
               />
-              <span className={`text-sm font-semibold ${userColor}`}>
-                {displayName}&apos;s Review
+              <span className={`text-sm font-medium ${userColor}`}>
+                Review {displayName}
               </span>
             </div>
 
             {/* Rating Stars */}
             <div>
-              <label className="block text-xs text-base-content/60 mb-2">
-                Rating
+              <label className="mb-2 block text-xs text-muted-foreground">
+                Kasih bintang dong
               </label>
               <div className="flex gap-2">
                 {[1, 2, 3, 4, 5].map((star) => (
@@ -286,8 +462,8 @@ export function ArchiveModal({
                     onClick={() => setRating(star)}
                     className={`text-3xl transition-all ${
                       star <= rating
-                        ? "text-warning scale-110"
-                        : "text-base-300 hover:text-warning/50"
+                        ? "text-foreground scale-110"
+                        : "text-muted-foreground/60 hover:text-foreground/70"
                     }`}
                   >
                     ★
@@ -298,63 +474,55 @@ export function ArchiveModal({
 
             {/* Notes */}
             <div className="mt-4">
-              <label className="block text-xs text-base-content/60 mb-2">
-                Notes (optional)
+              <label className="mb-2 block text-xs text-muted-foreground">
+                Komentarnya gimana? (opsional)
               </label>
-              <textarea
+              <Textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="What did you think? Any favorite dishes?"
-                className="textarea textarea-bordered w-full bg-base-100 h-20 text-sm"
+                placeholder="Rasanya gimana? Ada menu favorit? Pelayanannya oke kagak?"
+                className="h-20 text-sm"
               />
             </div>
           </div>
 
           {/* Status hint */}
-          <p className="text-xs text-base-content/50 text-center">
-            {partnerReviewed
-              ? "This will complete the visit and move to Visited list"
-              : `${partnerName} also needs to review before moving to Visited`
+          <p className="text-center text-xs text-muted-foreground">
+            {isSolo
+              ? "Langsung masuk list Udah Mampir, gaspol!"
+              : partnerReviewed
+              ? "Mantul! Langsung masuk list Udah Mampir"
+              : `${partnerName} juga kudu review dulu baru pindah ke list Udah Mampir`
             }
           </p>
 
           {/* Error */}
           {error && (
-            <div className="bg-error/10 border border-error/20 text-error text-sm rounded-lg p-3">
+            <div className="rounded-2xl border-2 border-foreground/20 bg-destructive/30 p-3 text-sm text-foreground">
               {error}
             </div>
           )}
 
           {/* Actions */}
           <div className="flex gap-3 pt-2">
-            <button
-              type="button"
-              className="btn btn-ghost flex-1"
-              onClick={onClose}
-              disabled={isPending}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="btn btn-primary flex-1"
-              disabled={isPending}
-            >
+            <Button type="button" variant="ghost" className="flex-1" onClick={onClose} disabled={isPending}>
+              Gajadi
+            </Button>
+            <Button type="submit" className="flex-1" disabled={isPending}>
               {isPending ? (
                 <span className="flex items-center gap-2">
-                  <span className="loading loading-spinner loading-sm"></span>
-                  Saving...
+                  <Spinner size="sm" />
+                  Bentar...
                 </span>
               ) : (
-                "Save Review"
+                "Simpen Review 💾"
               )}
-            </button>
+            </Button>
           </div>
         </form>
+        </>)}
+        </div>
       </div>
-      <form method="dialog" className="modal-backdrop">
-        <button onClick={onClose}>close</button>
-      </form>
     </dialog>
   );
 }

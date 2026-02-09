@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error("Error fetching places:", error);
     return NextResponse.json(
-      { error: "Failed to fetch places" },
+      { error: "Gagal ngambil data tempat" },
       { status: 500 }
     );
   }
