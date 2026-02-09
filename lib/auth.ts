@@ -3,11 +3,13 @@ import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import type { SessionPayload, Username } from "./types";
 
-const secretKey = process.env.AUTH_SECRET;
-if (!secretKey) {
-  throw new Error("AUTH_SECRET is required");
+function getEncodedKey() {
+  const secretKey = process.env.AUTH_SECRET;
+  if (!secretKey) {
+    throw new Error("AUTH_SECRET is required");
+  }
+  return new TextEncoder().encode(secretKey);
 }
-const encodedKey = new TextEncoder().encode(secretKey);
 
 export async function createSession(currentUser: Username) {
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
@@ -29,6 +31,7 @@ export async function deleteSession() {
 }
 
 export async function encrypt(payload: SessionPayload) {
+  const encodedKey = getEncodedKey();
   return new SignJWT(payload)
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
@@ -40,6 +43,7 @@ export async function decrypt(session: string | undefined): Promise<SessionPaylo
   if (!session) return null;
 
   try {
+    const encodedKey = getEncodedKey();
     const { payload } = await jwtVerify(session, encodedKey, {
       algorithms: ["HS256"],
     });
