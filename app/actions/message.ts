@@ -28,6 +28,7 @@ export async function setPartnerMessage(rawMessage: string) {
       create: { key: targetKey, value: message },
     });
 
+    revalidatePath("/buat-lu");
     revalidatePath("/planned");
     return { success: true };
   } catch (error) {

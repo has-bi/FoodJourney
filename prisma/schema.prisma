@@ -149,6 +149,22 @@ model AppConfig {
   @@map("app_config")
 }
 
+model LoveVoucherRedemption {
+  id                String   @id @default(uuid())
+  voucherId         String   @map("voucher_id") @db.VarChar(50)
+  voucherTitle      String   @map("voucher_title") @db.VarChar(200)
+  voucherDescription String  @map("voucher_description") @db.VarChar(300)
+  monthKey          String   @map("month_key") @db.VarChar(7) // YYYY-MM in Asia/Jakarta
+  redeemedBy        String   @map("redeemed_by") @db.VarChar(20) // "nadya"
+  redeemedAt        DateTime @default(now()) @map("redeemed_at")
+
+  @@unique([voucherId])
+  @@unique([redeemedBy, monthKey], name: "redeemerMonthKey")
+  @@index([redeemedBy])
+  @@index([redeemedAt(sort: Desc)])
+  @@map("love_voucher_redemptions")
+}
+
 enum PlaceStatus {
   suggested
   planned

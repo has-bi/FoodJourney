@@ -33,7 +33,7 @@ export default async function AppLayout({
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
       <header className="sticky top-0 z-40 border-b-2 border-border bg-card/95 backdrop-blur-sm">
-        <div className="flex items-center justify-between h-14 px-4 max-w-lg mx-auto">
+        <div className="mx-auto flex h-14 max-w-md items-center justify-between px-4">
           <div className="flex items-center gap-2">
             <Image
               src="/assets/pixel-plate.svg"
@@ -51,7 +51,7 @@ export default async function AppLayout({
       </header>
 
       {/* Main Content */}
-      <main className="px-4 py-4 max-w-lg mx-auto">{children}</main>
+      <main className="mx-auto max-w-md px-4 py-4">{children}</main>
 
       {/* Add Place FAB */}
       <AddPlaceModal currentUser={currentUser} />

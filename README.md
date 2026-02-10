@@ -57,6 +57,12 @@ Set semua env ini di Vercel Project > Settings > Environment Variables:
 - `R2_ACCESS_KEY_ID`
 - `R2_SECRET_ACCESS_KEY`
 - `R2_BUCKET_NAME`
+- `R2_PUBLIC_URL` (opsional, kalau pakai public object URL)
+
+Generate `AUTH_SECRET`:
+```bash
+openssl rand -base64 32
+```
 
 ### Deploy Flow
 1. Push branch ke GitHub.
@@ -75,7 +81,7 @@ npm run db:seed
 ```
 3. Cek login Hasbi/Nadya.
 4. Cek upload foto (R2).
-5. Cek fitur pesan 1 baris di halaman `Rencana`.
+5. Cek fitur pesan 1 baris + love voucher di halaman `Buat lu`.
 
 ## 4) Security Notes
 - Jangan commit `.env`, `.env.local`, atau secret apa pun.
@@ -87,3 +93,4 @@ npm run db:seed
 - Error database: cek `DATABASE_URL` / `DIRECT_URL`.
 - Error upload foto: cek semua env `R2_*`.
 - Error Gemini: cek `GEMINI_API_KEY`.
+- Build fail di awal: jalankan `npm run validate:env` buat lihat env mana yang kurang.

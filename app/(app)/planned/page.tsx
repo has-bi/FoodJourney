@@ -1,15 +1,13 @@
 "use client";
 
-import { useEffect, useState, useTransition, useCallback, type FormEvent } from "react";
+import Link from "next/link";
+import { useEffect, useState, useTransition, useCallback } from "react";
 import Image from "next/image";
 import { PlaceCard } from "@/components/PlaceCard";
 import { ArchiveModal } from "@/components/ArchiveModal";
 import type { PlaceWithUser, Username } from "@/lib/types";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { setPartnerMessage } from "@/app/actions/message";
 
 const moodFilters = [
   { value: null, label: "Semua", icon: "🍽️" },
@@ -29,19 +27,13 @@ export default function PlannedPage() {
   const [selectedPlace, setSelectedPlace] = useState<PlaceWithUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
-  const [incomingMessage, setIncomingMessage] = useState("");
-  const [messageDraft, setMessageDraft] = useState("");
-  const [messageFeedback, setMessageFeedback] = useState<string | null>(null);
-  const [isMessageError, setIsMessageError] = useState(false);
   const [, startTransition] = useTransition();
-  const [isSavingMessage, startSavingMessage] = useTransition();
 
   const fetchData = useCallback(async () => {
     try {
-      const [placesRes, userRes, messageRes] = await Promise.all([
+      const [placesRes, userRes] = await Promise.all([
         fetch("/api/places?status=planned"),
         fetch("/api/user"),
-        fetch("/api/message"),
       ]);
 
       if (placesRes.ok) {
@@ -52,12 +44,6 @@ export default function PlannedPage() {
       if (userRes.ok) {
         const userData = await userRes.json();
         setCurrentUser(userData.username);
-      }
-
-      if (messageRes.ok) {
-        const messageData = await messageRes.json();
-        setIncomingMessage(messageData.incomingMessage || "");
-        setMessageDraft(messageData.outgoingMessage || "");
       }
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -72,25 +58,6 @@ export default function PlannedPage() {
 
   const handleArchive = (place: PlaceWithUser) => {
     setSelectedPlace(place);
-  };
-
-  const handleMessageSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    setMessageFeedback(null);
-
-    startSavingMessage(async () => {
-      const result = await setPartnerMessage(messageDraft);
-
-      if (result?.error) {
-        setIsMessageError(true);
-        setMessageFeedback(result.error);
-        return;
-      }
-
-      setIsMessageError(false);
-      setMessageFeedback("Pesan lu kekirim ke doi");
-      await fetchData();
-    });
   };
 
   const handleArchiveSuccess = () => {
@@ -120,8 +87,6 @@ export default function PlannedPage() {
       })
     : places;
 
-  const partnerName = currentUser === "hasbi" ? "Nadya" : "Hasbi";
-
   if (isLoading) {
     return (
       <div className="flex justify-center py-12">
@@ -139,41 +104,17 @@ export default function PlannedPage() {
         </span>
       </div>
 
-      {/* Partner Message */}
-      <section className="space-y-3 rounded-3xl border-2 border-border bg-card p-4 shadow-[0_6px_0_0_rgba(61,44,44,0.08)]">
-        <div className="rounded-2xl border-2 border-border bg-muted/50 p-3">
-          <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
-            Pesan Dari {partnerName}
-          </p>
-          <p className="mt-1 truncate text-sm text-foreground">
-            {incomingMessage || "Belom ada pesan masuk nih"}
-          </p>
+      <Link
+        href="/buat-lu"
+        className="flex items-center justify-between rounded-2xl border-2 border-border bg-card p-3 text-sm shadow-[0_4px_0_0_rgba(61,44,44,0.06)] transition-colors hover:bg-muted/40"
+      >
+        <div>
+          <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Section Baru</p>
+          <p className="font-medium text-foreground">Buat lu 💌</p>
+          <p className="text-xs text-muted-foreground">Pesan kilat + love voucher sekarang pindah ke sini.</p>
         </div>
-
-        <form onSubmit={handleMessageSubmit} className="space-y-2">
-          <label htmlFor="partner-message" className="block text-sm font-medium text-foreground">
-            Kirim Pesan Kilat Buat {partnerName}
-          </label>
-          <div className="flex items-center gap-2">
-            <Input
-              id="partner-message"
-              maxLength={120}
-              value={messageDraft}
-              onChange={(e) => setMessageDraft(e.target.value.replace(/\r?\n/g, " "))}
-              placeholder="Contoh: Nanti malem gas kesini ya"
-            />
-            <Button type="submit" size="sm" disabled={isSavingMessage}>
-              {isSavingMessage ? "Ngirim..." : "Kirim"}
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground">1 baris doang, maksimal 120 karakter.</p>
-          {messageFeedback && (
-            <p className={cn("text-xs", isMessageError ? "text-destructive" : "text-success")}>
-              {messageFeedback}
-            </p>
-          )}
-        </form>
-      </section>
+        <span className="text-xs font-medium text-primary">Buka</span>
+      </Link>
 
       {/* Mood Filter */}
       {places.length > 0 && (

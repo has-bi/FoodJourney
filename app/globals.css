@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 @theme inline {
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: "Nunito", "Avenir Next", "Segoe UI", "Trebuchet MS", sans-serif;
+  --font-mono: "JetBrains Mono", "Cascadia Mono", "SFMono-Regular", ui-monospace, monospace;
 
   --color-background: #fff7f0;
   --color-foreground: #3d2c2c;
