@@ -176,8 +176,7 @@ export function LoveLetterModal({ recipientName }: LoveLetterModalProps) {
                   </p>
 
                   <p className="pt-2 text-base text-foreground font-medium">
-                    but i also never ever wondered have someone that truly loved
-                    me.
+                    but i also never ever wondered have you that truly loved me.
                   </p>
 
                   <p className="text-base text-primary font-medium">
