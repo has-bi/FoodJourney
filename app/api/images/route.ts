@@ -15,7 +15,8 @@ function getR2Config() {
 }
 
 export async function GET(request: NextRequest) {
-  const key = request.nextUrl.searchParams.get("key");
+  const rawKey = request.nextUrl.searchParams.get("key");
+  const key = normalizeR2Key(rawKey);
 
   if (!key) {
     return NextResponse.json({ error: "Key gambarnya kagak ada" }, { status: 400 });
@@ -52,7 +53,38 @@ export async function GET(request: NextRequest) {
         "Cache-Control": "public, max-age=31536000, immutable",
       },
     });
-  } catch {
+  } catch (error) {
+    console.error("Failed to read image from R2", { key, error });
     return NextResponse.json({ error: "Gambarnya kagak ketemu" }, { status: 404 });
   }
+}
+
+function normalizeR2Key(input: string | null): string {
+  if (!input) return "";
+
+  let key = input.trim();
+
+  if (key.startsWith("r2:")) {
+    key = key.slice(3);
+  }
+
+  if (key.startsWith("/api/images?")) {
+    const params = new URLSearchParams(key.split("?")[1] || "");
+    key = params.get("key") || "";
+  }
+
+  key = key.replace(/^\/+/, "");
+
+  // Decode up to 3 times to support legacy/double-encoded keys.
+  for (let i = 0; i < 3; i++) {
+    try {
+      const decoded = decodeURIComponent(key);
+      if (decoded === key) break;
+      key = decoded;
+    } catch {
+      break;
+    }
+  }
+
+  return key;
 }
