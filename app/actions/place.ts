@@ -454,7 +454,7 @@ export async function getVisitsForPlace(placeId: string) {
   });
   return visits.map((visit) => ({
     ...visit,
-    orderedItems: normalizeOrderedItems(visit.orderedItems),
+    orderedItems: normalizeOrderedItems(visit.orderedItems) as unknown as Prisma.JsonValue,
   }));
 }
 
