@@ -305,6 +305,7 @@ export function PlaceDetailModal({ place, currentUser, onClose, onAddReview, onN
                             alt="Foto kunjungan"
                             width={800}
                             height={256}
+                            unoptimized
                             className="mb-3 h-32 w-full rounded-xl object-cover"
                           />
                         )}

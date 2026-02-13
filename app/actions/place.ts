@@ -400,6 +400,9 @@ async function updatePlaceStats(placeId: string) {
     ? nadyaRatings.reduce((a, b) => a + b, 0) / nadyaRatings.length
     : null;
 
+  // Use the most recent visit photo for the place card thumbnail
+  const latestPhoto = visits.find((v) => v.photoUrl)?.photoUrl || null;
+
   await db.place.update({
     where: { id: placeId },
     data: {
@@ -407,6 +410,7 @@ async function updatePlaceStats(placeId: string) {
       avgHasbiRating: avgHasbi,
       avgNadyaRating: avgNadya,
       lastVisitedAt: visits[0]?.visitedAt || null,
+      photoUrl: latestPhoto,
     },
   });
 }

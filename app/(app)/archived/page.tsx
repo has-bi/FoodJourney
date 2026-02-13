@@ -141,6 +141,7 @@ export default function ArchivedPage() {
                       src={getImageUrl(place.photoUrl)}
                       alt={place.name}
                       fill
+                      unoptimized
                       sizes="(max-width: 640px) 50vw, 240px"
                       className="object-cover"
                     />
