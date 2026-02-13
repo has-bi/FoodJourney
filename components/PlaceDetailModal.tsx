@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { getImageUrl } from "@/lib/image-url";
+import { ImageViewer } from "@/components/ImageViewer";
 
 interface MenuItem {
   name: string;
@@ -43,6 +44,7 @@ export function PlaceDetailModal({ place, currentUser, onClose, onAddReview, onN
   const signatureMenus: MenuItem[] = (place.signatureMenus as unknown as MenuItem[]) || [];
   const [visits, setVisits] = useState<Visit[]>([]);
   const [loadingVisits, setLoadingVisits] = useState(true);
+  const [viewingImage, setViewingImage] = useState<{ src: string; alt: string } | null>(null);
 
   // Fetch visits for this place
   useEffect(() => {
@@ -300,14 +302,20 @@ export function PlaceDetailModal({ place, currentUser, onClose, onAddReview, onN
 
                         {/* Photo if exists */}
                         {visit.photoUrl && (
-                          <Image
-                            src={getImageUrl(visit.photoUrl)}
-                            alt="Foto kunjungan"
-                            width={800}
-                            height={256}
-                            unoptimized
-                            className="mb-3 h-32 w-full rounded-xl object-cover"
-                          />
+                          <button
+                            type="button"
+                            onClick={() => setViewingImage({ src: getImageUrl(visit.photoUrl!), alt: `Foto ${place.name}` })}
+                            className="mb-3 w-full cursor-pointer overflow-hidden rounded-xl"
+                          >
+                            <Image
+                              src={getImageUrl(visit.photoUrl)}
+                              alt="Foto kunjungan"
+                              width={800}
+                              height={256}
+                              unoptimized
+                              className="h-32 w-full rounded-xl object-cover transition-transform hover:scale-105"
+                            />
+                          </button>
                         )}
 
                         {/* Ordered Items */}
@@ -452,6 +460,14 @@ export function PlaceDetailModal({ place, currentUser, onClose, onAddReview, onN
         </div>
         </div>
       </div>
+
+      {viewingImage && (
+        <ImageViewer
+          src={viewingImage.src}
+          alt={viewingImage.alt}
+          onClose={() => setViewingImage(null)}
+        />
+      )}
     </dialog>
   );
 }
