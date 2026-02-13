@@ -115,7 +115,7 @@ model Visit {
 
   // Visit info
   visitedAt DateTime  @map("visited_at")
-  photoUrl  String?   @map("photo_url")
+  photoUrl  String?   @map("photo_url") // legacy – kept for backward compat
   visitType VisitType @default(together) @map("visit_type")
 
   // What we ordered - stored as JSON array
@@ -123,13 +123,15 @@ model Visit {
   orderedItems Json?   @map("ordered_items")
 
   // Hasbi's review
-  hasbiRating Int?    @map("hasbi_rating")
-  hasbiNotes  String? @map("hasbi_notes")
+  hasbiRating    Int?      @map("hasbi_rating")
+  hasbiNotes     String?   @map("hasbi_notes")
+  hasbiPhotoUrl  String?   @map("hasbi_photo_url")
   hasbiReviewedAt DateTime? @map("hasbi_reviewed_at")
 
   // Nadya's review
-  nadyaRating Int?    @map("nadya_rating")
-  nadyaNotes  String? @map("nadya_notes")
+  nadyaRating    Int?      @map("nadya_rating")
+  nadyaNotes     String?   @map("nadya_notes")
+  nadyaPhotoUrl  String?   @map("nadya_photo_url")
   nadyaReviewedAt DateTime? @map("nadya_reviewed_at")
 
   createdAt DateTime @default(now()) @map("created_at")

@@ -267,15 +267,20 @@ export async function addVisitReview(
     const visitId = existingVisitId || (existingInProgressVisit ? latestVisit.id : null);
 
     // Build user-specific review data
+    // Photo is already uploaded via /api/images – just use the key directly
+    const uploadedPhotoUrl: string | null = photoUrl || null;
+
     const reviewData = currentUser === "hasbi"
       ? {
           hasbiRating: rating,
           hasbiNotes: notes || null,
+          hasbiPhotoUrl: uploadedPhotoUrl,
           hasbiReviewedAt: new Date(),
         }
       : {
           nadyaRating: rating,
           nadyaNotes: notes || null,
+          nadyaPhotoUrl: uploadedPhotoUrl,
           nadyaReviewedAt: new Date(),
         };
 
@@ -327,9 +332,6 @@ export async function addVisitReview(
       }
       return { success: true, completed: willBeComplete, visitId };
     } else {
-      // Photo is already uploaded via /api/images – just use the key directly
-      const uploadedPhotoUrl: string | null = photoUrl || null;
-
       const normalizedOrderedItems = normalizeOrderedItems(orderedItems);
 
       // Creating new visit
@@ -337,7 +339,6 @@ export async function addVisitReview(
         data: {
           placeId,
           visitedAt: visitDate,
-          photoUrl: uploadedPhotoUrl,
           visitType: place.visitType,
           orderedItems: normalizedOrderedItems.length > 0
             ? (normalizedOrderedItems as unknown as Prisma.InputJsonValue)
@@ -401,7 +402,8 @@ async function updatePlaceStats(placeId: string) {
     : null;
 
   // Use the most recent visit photo for the place card thumbnail
-  const latestPhoto = visits.find((v) => v.photoUrl)?.photoUrl || null;
+  const latestVisitWithPhoto = visits.find((v) => v.hasbiPhotoUrl || v.nadyaPhotoUrl || v.photoUrl);
+  const latestPhoto = latestVisitWithPhoto?.hasbiPhotoUrl || latestVisitWithPhoto?.nadyaPhotoUrl || latestVisitWithPhoto?.photoUrl || null;
 
   await db.place.update({
     where: { id: placeId },
@@ -508,23 +510,25 @@ export async function createNewVisit(
       return { error: "Tempatnya kagak ketemu" };
     }
 
+    // Photo is already uploaded via /api/images – just use the key directly
+    const uploadedPhotoUrl: string | null = photoUrl || null;
+
     // Build user-specific review data
     const reviewData = currentUser === "hasbi"
       ? {
           hasbiRating: rating,
           hasbiNotes: notes || null,
+          hasbiPhotoUrl: uploadedPhotoUrl,
           hasbiReviewedAt: new Date(),
         }
       : {
           nadyaRating: rating,
           nadyaNotes: notes || null,
+          nadyaPhotoUrl: uploadedPhotoUrl,
           nadyaReviewedAt: new Date(),
         };
 
     const isSolo = place.visitType === "solo";
-
-    // Photo is already uploaded via /api/images – just use the key directly
-    const uploadedPhotoUrl: string | null = photoUrl || null;
 
     const normalizedOrderedItems = normalizeOrderedItems(orderedItems);
 
@@ -532,7 +536,6 @@ export async function createNewVisit(
       data: {
         placeId,
         visitedAt: visitDate,
-        photoUrl: uploadedPhotoUrl,
         visitType: place.visitType,
         orderedItems: normalizedOrderedItems.length > 0
           ? (normalizedOrderedItems as unknown as Prisma.InputJsonValue)

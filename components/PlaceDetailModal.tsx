@@ -300,22 +300,58 @@ export function PlaceDetailModal({ place, currentUser, onClose, onAddReview, onN
                           </div>
                         </div>
 
-                        {/* Photo if exists */}
-                        {visit.photoUrl && (
-                          <button
-                            type="button"
-                            onClick={() => setViewingImage({ src: getImageUrl(visit.photoUrl!), alt: `Foto ${place.name}` })}
-                            className="mb-3 w-full cursor-pointer overflow-hidden rounded-xl"
-                          >
-                            <Image
-                              src={getImageUrl(visit.photoUrl)}
-                              alt="Foto kunjungan"
-                              width={800}
-                              height={256}
-                              unoptimized
-                              className="h-32 w-full rounded-xl object-cover transition-transform hover:scale-105"
-                            />
-                          </button>
+                        {/* Photos from both users */}
+                        {(visit.hasbiPhotoUrl || visit.nadyaPhotoUrl || visit.photoUrl) && (
+                          <div className={`mb-3 grid gap-2 ${visit.hasbiPhotoUrl && visit.nadyaPhotoUrl ? "grid-cols-2" : "grid-cols-1"}`}>
+                            {(visit.hasbiPhotoUrl || (!visit.nadyaPhotoUrl && visit.photoUrl)) && (
+                              <button
+                                type="button"
+                                onClick={() => setViewingImage({
+                                  src: getImageUrl((visit.hasbiPhotoUrl || visit.photoUrl)!),
+                                  alt: `Foto ${place.name} - Hasbi`,
+                                })}
+                                className="relative w-full cursor-pointer overflow-hidden rounded-xl"
+                              >
+                                <Image
+                                  src={getImageUrl((visit.hasbiPhotoUrl || visit.photoUrl)!)}
+                                  alt="Foto Hasbi"
+                                  width={400}
+                                  height={256}
+                                  unoptimized
+                                  className="h-32 w-full rounded-xl object-cover transition-transform hover:scale-105"
+                                />
+                                {visit.hasbiPhotoUrl && visit.nadyaPhotoUrl && (
+                                  <span className="absolute bottom-1.5 left-1.5 flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-[10px] text-white">
+                                    <span className="h-1.5 w-1.5 rounded-full bg-primary" /> Hasbi
+                                  </span>
+                                )}
+                              </button>
+                            )}
+                            {visit.nadyaPhotoUrl && (
+                              <button
+                                type="button"
+                                onClick={() => setViewingImage({
+                                  src: getImageUrl(visit.nadyaPhotoUrl!),
+                                  alt: `Foto ${place.name} - Nadya`,
+                                })}
+                                className="relative w-full cursor-pointer overflow-hidden rounded-xl"
+                              >
+                                <Image
+                                  src={getImageUrl(visit.nadyaPhotoUrl)}
+                                  alt="Foto Nadya"
+                                  width={400}
+                                  height={256}
+                                  unoptimized
+                                  className="h-32 w-full rounded-xl object-cover transition-transform hover:scale-105"
+                                />
+                                {visit.hasbiPhotoUrl && visit.nadyaPhotoUrl && (
+                                  <span className="absolute bottom-1.5 left-1.5 flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-[10px] text-white">
+                                    <span className="h-1.5 w-1.5 rounded-full bg-secondary" /> Nadya
+                                  </span>
+                                )}
+                              </button>
+                            )}
+                          </div>
                         )}
 
                         {/* Ordered Items */}
