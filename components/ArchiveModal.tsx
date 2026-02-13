@@ -52,10 +52,8 @@ export function ArchiveModal({
   );
   const [rating, setRating] = useState(0);
   const [notes, setNotes] = useState("");
-  const [photoPreview, setPhotoPreview] = useState<string | null>(
-    hasExistingPhoto && !isNewVisit ? getImageUrl(existingVisit?.photoUrl || place.photoUrl || "") : null
-  );
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoFiles, setPhotoFiles] = useState<File[]>([]);
+  const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
 
@@ -84,25 +82,43 @@ export function ArchiveModal({
   }, []);
 
   const handlePhotoChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
-    // Validate file type
-    if (!file.type.startsWith("image/")) {
-      setError("Pilih file gambar dong, cuy");
+    const newFiles: File[] = [];
+    const newPreviews: string[] = [];
+
+    for (const file of Array.from(files)) {
+      if (!file.type.startsWith("image/")) {
+        setError("Pilih file gambar dong, cuy");
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        setError("Ukuran gambar maksimal 5MB ya");
+        return;
+      }
+      newFiles.push(file);
+      newPreviews.push(URL.createObjectURL(file));
+    }
+
+    const total = photoFiles.length + newFiles.length;
+    if (total > 5) {
+      setError("Maksimal 5 foto ya");
+      newPreviews.forEach(URL.revokeObjectURL);
       return;
     }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      setError("Ukuran gambar maksimal 5MB ya");
-      return;
-    }
-
-    // Keep the file for upload and create a local preview URL
-    setPhotoFile(file);
-    setPhotoPreview(URL.createObjectURL(file));
+    setPhotoFiles((prev) => [...prev, ...newFiles]);
+    setPhotoPreviews((prev) => [...prev, ...newPreviews]);
     setError(null);
+    // Reset input so the same file(s) can be re-selected
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const removePhoto = (index: number) => {
+    URL.revokeObjectURL(photoPreviews[index]);
+    setPhotoFiles((prev) => prev.filter((_, i) => i !== index));
+    setPhotoPreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -115,20 +131,22 @@ export function ArchiveModal({
     }
 
     startTransition(async () => {
-      // Upload new photo via API route (avoids Server Action serialization limit)
-      let uploadedPhotoKey: string | undefined;
-      if (photoFile) {
+      // Upload photos via API route (avoids Server Action serialization limit)
+      const uploadedKeys: string[] = [];
+      if (photoFiles.length > 0) {
         try {
-          const formData = new FormData();
-          formData.append("file", photoFile);
-          formData.append("folder", `visits/${place.id}`);
-          const res = await fetch("/api/images", { method: "POST", body: formData });
-          const data = await res.json();
-          if (!res.ok) {
-            setError(data.error || "Gagal upload gambar");
-            return;
+          for (const file of photoFiles) {
+            const formData = new FormData();
+            formData.append("file", file);
+            formData.append("folder", `visits/${place.id}`);
+            const res = await fetch("/api/images", { method: "POST", body: formData });
+            const data = await res.json();
+            if (!res.ok) {
+              setError(data.error || "Gagal upload gambar");
+              return;
+            }
+            uploadedKeys.push(data.key);
           }
-          uploadedPhotoKey = data.key;
         } catch {
           setError("Gagal upload gambar, coba lagi");
           return;
@@ -136,6 +154,7 @@ export function ArchiveModal({
       }
 
       let result;
+      const photoKeys = uploadedKeys.length > 0 ? uploadedKeys : undefined;
 
       if (isNewVisit) {
         // Creating a brand new visit for an archived place
@@ -145,7 +164,7 @@ export function ArchiveModal({
           new Date(visitDate),
           rating,
           notes,
-          uploadedPhotoKey,
+          photoKeys,
           orderedItems.length > 0 ? orderedItems : undefined
         );
       } else {
@@ -156,7 +175,7 @@ export function ArchiveModal({
           new Date(visitDate),
           rating,
           notes,
-          uploadedPhotoKey,
+          photoKeys,
           orderedItems.length > 0 ? orderedItems : undefined,
           existingVisit?.id
         );
@@ -258,64 +277,50 @@ export function ArchiveModal({
             </div>
           )}
 
-          {/* Photo Upload - only show upload option if no existing photo */}
+          {/* Photo Upload */}
           <div>
             <label className="mb-2 block text-sm font-medium text-foreground">
-              Foto {hasExistingPhoto && !isNewVisit ? "(udah ada)" : "📸"}
+              Foto 📸 {photoPreviews.length > 0 && <span className="text-muted-foreground font-normal">({photoPreviews.length}/5)</span>}
             </label>
-            <div
-              onClick={() => !hasExistingPhoto && fileInputRef.current?.click()}
-              className={cn(
-                "rounded-2xl border-2 border-dashed border-border p-4 text-center transition-colors",
-                hasExistingPhoto ? "cursor-default" : "cursor-pointer hover:border-primary/50"
-              )}
-            >
-              {photoPreview ? (
-                <div className="relative">
-                  <Image
-                    src={photoPreview}
-                    alt="Preview foto"
-                    width={800}
-                    height={320}
-                    unoptimized
-                    className="w-full h-40 rounded-2xl object-cover"
-                  />
-                  {!hasExistingPhoto && (
+
+            {/* Photo previews grid */}
+            {photoPreviews.length > 0 && (
+              <div className="mb-2 grid grid-cols-3 gap-2">
+                {photoPreviews.map((preview, index) => (
+                  <div key={index} className="relative aspect-square">
+                    <Image
+                      src={preview}
+                      alt={`Foto ${index + 1}`}
+                      fill
+                      unoptimized
+                      className="rounded-xl object-cover"
+                    />
                     <Button
                       type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (photoPreview) URL.revokeObjectURL(photoPreview);
-                        setPhotoPreview(null);
-                        setPhotoFile(null);
-                        if (fileInputRef.current) fileInputRef.current.value = "";
-                      }}
+                      onClick={() => removePhoto(index)}
                       variant="destructive"
                       size="icon"
-                      className="absolute right-2 top-2 h-7 w-7 rounded-full"
+                      className="absolute right-1 top-1 h-6 w-6 rounded-full"
                     >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-4 w-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M6 18L18 6M6 6l12 12"
-                        />
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                       </svg>
                     </Button>
-                  )}
-                </div>
-              ) : (
-                <div className="py-4">
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Upload button */}
+            {photoPreviews.length < 5 && (
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                className="cursor-pointer rounded-2xl border-2 border-dashed border-border p-4 text-center transition-colors hover:border-primary/50"
+              >
+                <div className="py-2">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    className="mx-auto h-10 w-10 text-muted-foreground/60"
+                    className="mx-auto h-8 w-8 text-muted-foreground/60"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -327,21 +332,20 @@ export function ArchiveModal({
                       d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
                     />
                   </svg>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    Tap sini buat upload foto
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {photoPreviews.length === 0 ? "Tap sini buat upload foto" : "Tambah foto lagi"}
                   </p>
                 </div>
-              )}
-            </div>
-            {!hasExistingPhoto && (
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handlePhotoChange}
-                className="hidden"
-              />
+              </div>
             )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handlePhotoChange}
+              className="hidden"
+            />
           </div>
 
           {/* Visit Date - only editable if not already set */}

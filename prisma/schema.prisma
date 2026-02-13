@@ -125,13 +125,13 @@ model Visit {
   // Hasbi's review
   hasbiRating    Int?      @map("hasbi_rating")
   hasbiNotes     String?   @map("hasbi_notes")
-  hasbiPhotoUrl  String?   @map("hasbi_photo_url")
+  hasbiPhotos    Json?     @map("hasbi_photos") // string[] of R2 keys
   hasbiReviewedAt DateTime? @map("hasbi_reviewed_at")
 
   // Nadya's review
   nadyaRating    Int?      @map("nadya_rating")
   nadyaNotes     String?   @map("nadya_notes")
-  nadyaPhotoUrl  String?   @map("nadya_photo_url")
+  nadyaPhotos    Json?     @map("nadya_photos") // string[] of R2 keys
   nadyaReviewedAt DateTime? @map("nadya_reviewed_at")
 
   createdAt DateTime @default(now()) @map("created_at")

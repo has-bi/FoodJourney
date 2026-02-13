@@ -234,7 +234,7 @@ export async function addVisitReview(
   visitDate: Date,
   rating: number,
   notes: string,
-  photoUrl?: string,
+  photoKeys?: string[],
   orderedItems?: OrderedItem[],
   existingVisitId?: string // If adding review to existing visit
 ) {
@@ -266,21 +266,22 @@ export async function addVisitReview(
 
     const visitId = existingVisitId || (existingInProgressVisit ? latestVisit.id : null);
 
-    // Build user-specific review data
-    // Photo is already uploaded via /api/images – just use the key directly
-    const uploadedPhotoUrl: string | null = photoUrl || null;
+    // Photos are already uploaded via /api/images – store as JSON array
+    const photos = photoKeys && photoKeys.length > 0
+      ? (photoKeys as unknown as Prisma.InputJsonValue)
+      : undefined;
 
     const reviewData = currentUser === "hasbi"
       ? {
           hasbiRating: rating,
           hasbiNotes: notes || null,
-          hasbiPhotoUrl: uploadedPhotoUrl,
+          ...(photos ? { hasbiPhotos: photos } : {}),
           hasbiReviewedAt: new Date(),
         }
       : {
           nadyaRating: rating,
           nadyaNotes: notes || null,
-          nadyaPhotoUrl: uploadedPhotoUrl,
+          ...(photos ? { nadyaPhotos: photos } : {}),
           nadyaReviewedAt: new Date(),
         };
 
@@ -402,8 +403,12 @@ async function updatePlaceStats(placeId: string) {
     : null;
 
   // Use the most recent visit photo for the place card thumbnail
-  const latestVisitWithPhoto = visits.find((v) => v.hasbiPhotoUrl || v.nadyaPhotoUrl || v.photoUrl);
-  const latestPhoto = latestVisitWithPhoto?.hasbiPhotoUrl || latestVisitWithPhoto?.nadyaPhotoUrl || latestVisitWithPhoto?.photoUrl || null;
+  const firstPhoto = (photos: unknown): string | null => {
+    if (Array.isArray(photos) && typeof photos[0] === "string") return photos[0];
+    return null;
+  };
+  const latestVisitWithPhoto = visits.find((v) => firstPhoto(v.hasbiPhotos) || firstPhoto(v.nadyaPhotos) || v.photoUrl);
+  const latestPhoto = (latestVisitWithPhoto && (firstPhoto(latestVisitWithPhoto.hasbiPhotos) || firstPhoto(latestVisitWithPhoto.nadyaPhotos))) || latestVisitWithPhoto?.photoUrl || null;
 
   await db.place.update({
     where: { id: placeId },
@@ -498,7 +503,7 @@ export async function createNewVisit(
   visitDate: Date,
   rating: number,
   notes: string,
-  photoUrl?: string,
+  photoKeys?: string[],
   orderedItems?: OrderedItem[]
 ) {
   try {
@@ -510,21 +515,23 @@ export async function createNewVisit(
       return { error: "Tempatnya kagak ketemu" };
     }
 
-    // Photo is already uploaded via /api/images – just use the key directly
-    const uploadedPhotoUrl: string | null = photoUrl || null;
+    // Photos are already uploaded via /api/images – store as JSON array
+    const photos = photoKeys && photoKeys.length > 0
+      ? (photoKeys as unknown as Prisma.InputJsonValue)
+      : undefined;
 
     // Build user-specific review data
     const reviewData = currentUser === "hasbi"
       ? {
           hasbiRating: rating,
           hasbiNotes: notes || null,
-          hasbiPhotoUrl: uploadedPhotoUrl,
+          ...(photos ? { hasbiPhotos: photos } : {}),
           hasbiReviewedAt: new Date(),
         }
       : {
           nadyaRating: rating,
           nadyaNotes: notes || null,
-          nadyaPhotoUrl: uploadedPhotoUrl,
+          ...(photos ? { nadyaPhotos: photos } : {}),
           nadyaReviewedAt: new Date(),
         };
 

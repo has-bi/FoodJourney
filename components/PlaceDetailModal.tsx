@@ -10,6 +10,11 @@ import { Spinner } from "@/components/ui/spinner";
 import { getImageUrl } from "@/lib/image-url";
 import { ImageViewer } from "@/components/ImageViewer";
 
+function toStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((v): v is string => typeof v === "string");
+}
+
 interface MenuItem {
   name: string;
   price?: string;
@@ -301,58 +306,49 @@ export function PlaceDetailModal({ place, currentUser, onClose, onAddReview, onN
                         </div>
 
                         {/* Photos from both users */}
-                        {(visit.hasbiPhotoUrl || visit.nadyaPhotoUrl || visit.photoUrl) && (
-                          <div className={`mb-3 grid gap-2 ${visit.hasbiPhotoUrl && visit.nadyaPhotoUrl ? "grid-cols-2" : "grid-cols-1"}`}>
-                            {(visit.hasbiPhotoUrl || (!visit.nadyaPhotoUrl && visit.photoUrl)) && (
-                              <button
-                                type="button"
-                                onClick={() => setViewingImage({
-                                  src: getImageUrl((visit.hasbiPhotoUrl || visit.photoUrl)!),
-                                  alt: `Foto ${place.name} - Hasbi`,
-                                })}
-                                className="relative w-full cursor-pointer overflow-hidden rounded-xl"
-                              >
-                                <Image
-                                  src={getImageUrl((visit.hasbiPhotoUrl || visit.photoUrl)!)}
-                                  alt="Foto Hasbi"
-                                  width={400}
-                                  height={256}
-                                  unoptimized
-                                  className="h-32 w-full rounded-xl object-cover transition-transform hover:scale-105"
-                                />
-                                {visit.hasbiPhotoUrl && visit.nadyaPhotoUrl && (
-                                  <span className="absolute bottom-1.5 left-1.5 flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-[10px] text-white">
-                                    <span className="h-1.5 w-1.5 rounded-full bg-primary" /> Hasbi
-                                  </span>
-                                )}
-                              </button>
-                            )}
-                            {visit.nadyaPhotoUrl && (
-                              <button
-                                type="button"
-                                onClick={() => setViewingImage({
-                                  src: getImageUrl(visit.nadyaPhotoUrl!),
-                                  alt: `Foto ${place.name} - Nadya`,
-                                })}
-                                className="relative w-full cursor-pointer overflow-hidden rounded-xl"
-                              >
-                                <Image
-                                  src={getImageUrl(visit.nadyaPhotoUrl)}
-                                  alt="Foto Nadya"
-                                  width={400}
-                                  height={256}
-                                  unoptimized
-                                  className="h-32 w-full rounded-xl object-cover transition-transform hover:scale-105"
-                                />
-                                {visit.hasbiPhotoUrl && visit.nadyaPhotoUrl && (
-                                  <span className="absolute bottom-1.5 left-1.5 flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-[10px] text-white">
-                                    <span className="h-1.5 w-1.5 rounded-full bg-secondary" /> Nadya
-                                  </span>
-                                )}
-                              </button>
-                            )}
-                          </div>
-                        )}
+                        {(() => {
+                          const hasbiPhotos = toStringArray(visit.hasbiPhotos);
+                          const nadyaPhotos = toStringArray(visit.nadyaPhotos);
+                          // Legacy: single photoUrl field
+                          const legacyPhotos = (!hasbiPhotos.length && !nadyaPhotos.length && visit.photoUrl) ? [visit.photoUrl] : [];
+                          const allPhotos = [
+                            ...hasbiPhotos.map((url) => ({ url, user: "Hasbi" as const })),
+                            ...nadyaPhotos.map((url) => ({ url, user: "Nadya" as const })),
+                            ...legacyPhotos.map((url) => ({ url, user: null })),
+                          ];
+                          if (allPhotos.length === 0) return null;
+                          const showLabel = hasbiPhotos.length > 0 && nadyaPhotos.length > 0;
+                          return (
+                            <div className={`mb-3 grid gap-2 ${allPhotos.length >= 2 ? "grid-cols-2" : "grid-cols-1"}`}>
+                              {allPhotos.map((photo, pi) => (
+                                <button
+                                  key={pi}
+                                  type="button"
+                                  onClick={() => setViewingImage({
+                                    src: getImageUrl(photo.url),
+                                    alt: `Foto ${place.name}${photo.user ? ` - ${photo.user}` : ""}`,
+                                  })}
+                                  className="relative w-full cursor-pointer overflow-hidden rounded-xl"
+                                >
+                                  <Image
+                                    src={getImageUrl(photo.url)}
+                                    alt={photo.user ? `Foto ${photo.user}` : "Foto kunjungan"}
+                                    width={400}
+                                    height={256}
+                                    unoptimized
+                                    className="aspect-square w-full rounded-xl object-cover transition-transform hover:scale-105"
+                                  />
+                                  {showLabel && photo.user && (
+                                    <span className="absolute bottom-1.5 left-1.5 flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-[10px] text-white">
+                                      <span className={`h-1.5 w-1.5 rounded-full ${photo.user === "Hasbi" ? "bg-primary" : "bg-secondary"}`} />
+                                      {photo.user}
+                                    </span>
+                                  )}
+                                </button>
+                              ))}
+                            </div>
+                          );
+                        })()}
 
                         {/* Ordered Items */}
                         {orderedItems.length > 0 && (
