@@ -48,7 +48,7 @@ export function LoveLetterModal({ recipientName }: LoveLetterModalProps) {
   return (
     <dialog
       ref={dialogRef}
-      className="fixed inset-0 z-[70] w-full bg-transparent backdrop:bg-black/70 backdrop:backdrop-blur-sm"
+      className="fixed inset-0 z-70 w-full bg-transparent backdrop:bg-black/70 backdrop:backdrop-blur-sm"
       onClick={handleBackdropClick}
     >
       <div className="flex min-h-full items-center justify-center p-6 pointer-events-none">
@@ -59,7 +59,7 @@ export function LoveLetterModal({ recipientName }: LoveLetterModalProps) {
               onClick={() => setIsRevealed(true)}
               className="group w-full cursor-pointer"
             >
-              <div className="relative overflow-hidden rounded-3xl border-2 border-secondary/30 bg-gradient-to-br from-secondary/10 via-card to-primary/10 p-8 shadow-[0_8px_0_0_rgba(61,44,44,0.1)] transition-all duration-300 group-hover:shadow-[0_12px_0_0_rgba(61,44,44,0.12)] group-hover:-translate-y-1">
+              <div className="relative overflow-hidden rounded-3xl border-2 border-secondary/30 bg-linear-to-br from-secondary/10 via-card to-primary/10 p-8 shadow-[0_8px_0_0_rgba(61,44,44,0.1)] transition-all duration-300 group-hover:shadow-[0_12px_0_0_rgba(61,44,44,0.12)] group-hover:-translate-y-1">
                 {/* Decorative hearts */}
                 <div className="absolute -right-3 -top-3 text-4xl opacity-20 rotate-12">
                   <span>&#10084;&#65039;</span>
@@ -96,7 +96,7 @@ export function LoveLetterModal({ recipientName }: LoveLetterModalProps) {
             /* === Revealed letter state === */
             <div className="animate-in fade-in zoom-in-95 duration-500 overflow-hidden rounded-3xl border-2 border-secondary/30 bg-card shadow-[0_8px_0_0_rgba(61,44,44,0.1)]">
               {/* Letter header */}
-              <div className="border-b border-secondary/20 bg-gradient-to-r from-secondary/10 to-primary/10 px-6 py-4">
+              <div className="border-b border-secondary/20 bg-linear-to-r from-secondary/10 to-primary/10 px-6 py-4">
                 <div className="flex items-center justify-between">
                   <p className="text-sm text-muted-foreground">
                     Dari sang maha raja mulia laksana{" "}
