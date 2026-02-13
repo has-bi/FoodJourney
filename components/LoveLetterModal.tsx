@@ -113,28 +113,53 @@ export function LoveLetterModal({ recipientName }: LoveLetterModalProps) {
               </div>
 
               {/* Letter body */}
-              <div className="px-6 py-5 space-y-4">
+              <div className="max-h-[60vh] overflow-y-auto px-6 py-5 space-y-4">
                 <p className="text-lg font-medium text-foreground">
-                  Dear {recipientName},
+                  Hi cegundeng,
                 </p>
 
-                {/* Placeholder letter content */}
-                <div className="space-y-3 text-sm leading-relaxed text-foreground/80 italic">
+                <div className="space-y-4 text-sm leading-relaxed text-foreground/80">
                   <p>
-                    Tulis surat cintamu di sini...
+                    how was this last 2 year?{" "}
+                    i know its full of <span className="font-bold text-foreground">BULLLYING</span> wkwkwk
                   </p>
                   <p>
-                    Bisa beberapa paragraf, ceritain apa yang kamu mau bilang.
+                    but its also full of joy and happiness, right?
                   </p>
-                </div>
 
-                {/* Sign off */}
-                <div className="pt-2 text-right">
-                  <p className="text-sm text-foreground/70">
-                    Selalu sayang,
+                  <p>
+                    have you ever wondered you have so many nicknames?{" "}
+                    <span className="italic text-secondary">cegundeng, sambilung, Heru Tamcit, brengsek kecil</span>{" "}
+                    and sooooo many more
                   </p>
-                  <p className="text-base font-medium text-primary">
-                    Hasbi
+
+                  <p>
+                    Have you ever wondered always got full when try new food{" "}
+                    <br />
+                    being <span className="italic">plenger</span>, being{" "}
+                    <span className="italic">{"\u201C"}tek tambah nasi ya{"\u201D"}</span>, being{" "}
+                    <span className="italic">{"\u201C"}wuihhh shedepp nyoooo{"\u201D"}</span>
+                  </p>
+
+                  <p>
+                    Have you ever wondered being loved in every your conditions{" "}
+                    <br />
+                    being ileran, being sariawan for a weeks, and being crying cause of salmon{" "}
+                    <span className="text-xs text-muted-foreground">(but still got bullied for sure)</span>
+                  </p>
+
+                  <p>
+                    Have you ever wondered got bullied{" "}
+                    <br />
+                    and you still feel happy, feel loved, and angry at the same time
+                  </p>
+
+                  <p className="pt-2 text-base text-foreground font-medium">
+                    but i also never ever wondered have someone that truly loved me.
+                  </p>
+
+                  <p className="text-base text-primary font-medium">
+                    Thank you love.
                   </p>
                 </div>
               </div>
