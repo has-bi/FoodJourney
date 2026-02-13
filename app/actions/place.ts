@@ -196,6 +196,39 @@ interface OrderedItem {
   notes?: string;
 }
 
+function normalizeOrderedItems(value: unknown): OrderedItem[] {
+  if (!Array.isArray(value)) return [];
+
+  const items: OrderedItem[] = [];
+
+  for (const entry of value) {
+    // Ignore nested arrays and non-object payloads from legacy/corrupt rows.
+    if (!entry || Array.isArray(entry) || typeof entry !== "object") continue;
+
+    const rawName = (entry as { name?: unknown }).name;
+    const rawNotes = (entry as { notes?: unknown }).notes;
+
+    if (typeof rawName !== "string") continue;
+    const name = rawName.trim();
+    if (!name) continue;
+
+    const notes =
+      typeof rawNotes === "string" && rawNotes.trim().length > 0
+        ? rawNotes.trim()
+        : undefined;
+
+    items.push({
+      name: name.slice(0, 120),
+      ...(notes ? { notes: notes.slice(0, 500) } : {}),
+    });
+
+    // Keep payload bounded for Server Action serialization safety.
+    if (items.length >= 100) break;
+  }
+
+  return items;
+}
+
 export async function addVisitReview(
   placeId: string,
   currentUser: "hasbi" | "nadya",
@@ -264,17 +297,17 @@ export async function addVisitReview(
           (currentUser === "nadya" && visit.hasbiRating !== null);
 
       // Update visit with new review
-      const existingItems = (visit.orderedItems as unknown as OrderedItem[]) || [];
-      const mergedItems = orderedItems && orderedItems.length > 0
-        ? [...existingItems, ...orderedItems]
-        : undefined;
+      const existingItems = normalizeOrderedItems(visit.orderedItems);
+      const incomingItems = normalizeOrderedItems(orderedItems);
+      const mergedItems =
+        incomingItems.length > 0 ? [...existingItems, ...incomingItems] : [];
 
       await db.visit.update({
         where: { id: visitId },
         data: {
           ...reviewData,
           // Merge ordered items if provided
-          ...(mergedItems ? {
+          ...(mergedItems.length > 0 ? {
             orderedItems: mergedItems as unknown as Prisma.InputJsonValue,
           } : {}),
         },
@@ -303,6 +336,8 @@ export async function addVisitReview(
         uploadedPhotoUrl = photoUrl;
       }
 
+      const normalizedOrderedItems = normalizeOrderedItems(orderedItems);
+
       // Creating new visit
       const newVisit = await db.visit.create({
         data: {
@@ -310,8 +345,8 @@ export async function addVisitReview(
           visitedAt: visitDate,
           photoUrl: uploadedPhotoUrl,
           visitType: place.visitType,
-          orderedItems: orderedItems && orderedItems.length > 0
-            ? (orderedItems as unknown as Prisma.InputJsonValue)
+          orderedItems: normalizedOrderedItems.length > 0
+            ? (normalizedOrderedItems as unknown as Prisma.InputJsonValue)
             : undefined,
           ...reviewData,
         },
@@ -417,7 +452,10 @@ export async function getVisitsForPlace(placeId: string) {
     where: { placeId },
     orderBy: { visitedAt: "desc" },
   });
-  return visits;
+  return visits.map((visit) => ({
+    ...visit,
+    orderedItems: normalizeOrderedItems(visit.orderedItems),
+  }));
 }
 
 // Toggle content created status (Hasbi only)
@@ -495,14 +533,16 @@ export async function createNewVisit(
       uploadedPhotoUrl = photoUrl;
     }
 
+    const normalizedOrderedItems = normalizeOrderedItems(orderedItems);
+
     const newVisit = await db.visit.create({
       data: {
         placeId,
         visitedAt: visitDate,
         photoUrl: uploadedPhotoUrl,
         visitType: place.visitType,
-        orderedItems: orderedItems && orderedItems.length > 0
-          ? (orderedItems as unknown as Prisma.InputJsonValue)
+        orderedItems: normalizedOrderedItems.length > 0
+          ? (normalizedOrderedItems as unknown as Prisma.InputJsonValue)
           : undefined,
         ...reviewData,
       },
