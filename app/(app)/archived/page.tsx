@@ -98,12 +98,7 @@ export default function ArchivedPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-medium">Udah Mampir 🏆</h1>
-        <span className={`text-xs ${currentUser === "hasbi" ? "text-primary" : "text-secondary"}`}>
-          Akun aktif: {currentUser === "hasbi" ? "Hasbi" : "Nadya"}
-        </span>
-      </div>
+      <h1 className="text-lg font-medium">Udah Mampir 🏆</h1>
 
       {places.length > 0 ? (
         <>

@@ -14,10 +14,17 @@ export default function LoginPage() {
     <div className="w-full max-w-sm">
       {/* Logo & Title */}
       <div className="text-center mb-8">
-        <Image src="/assets/pixel-plate.svg" alt="" aria-hidden="true" width={56} height={56} className="mx-auto mb-3 h-14 w-14" />
-        <h1 className="text-2xl font-medium text-foreground">FoodJourney</h1>
+        <Image
+          src="/assets/pixel-plate.svg"
+          alt=""
+          aria-hidden="true"
+          width={56}
+          height={56}
+          className="mx-auto mb-3 h-14 w-14"
+        />
+        <h1 className="text-2xl font-medium text-foreground">TekCobainYuk</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Catetan kuliner bareng pasangan, auto anti bingung 🔥
+          Pencatatan pencititin perkulineran bersama cegundeng 🔥
         </p>
       </div>
 

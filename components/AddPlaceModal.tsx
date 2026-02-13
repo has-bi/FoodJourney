@@ -76,7 +76,7 @@ export function AddPlaceModal({ currentUser = "hasbi" }: AddPlaceModalProps) {
       {/* Floating Action Button */}
       <button
         onClick={openModal}
-        className="fixed bottom-24 right-4 z-30 h-12 w-12 rounded-full border-2 border-foreground/20 bg-primary text-foreground shadow-[0_4px_0_0_rgba(61,44,44,0.12)] transition-all hover:brightness-[0.98] active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(61,44,44,0.12)]"
+        className="fixed bottom-24 right-4 z-30 flex h-12 w-12 items-center justify-center rounded-full border-2 border-foreground/20 bg-primary text-foreground shadow-[0_4px_0_0_rgba(61,44,44,0.12)] transition-all hover:brightness-[0.98] active:translate-y-0.5 active:shadow-[0_2px_0_0_rgba(61,44,44,0.12)]"
         aria-label="Tambah tempat baru"
       >
         <svg

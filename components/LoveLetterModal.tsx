@@ -99,14 +99,26 @@ export function LoveLetterModal({ recipientName }: LoveLetterModalProps) {
               <div className="border-b border-secondary/20 bg-gradient-to-r from-secondary/10 to-primary/10 px-6 py-4">
                 <div className="flex items-center justify-between">
                   <p className="text-sm text-muted-foreground">
-                    Dari Hasbi, dengan sayang <span>&#10084;&#65039;</span>
+                    Dari sang maha raja mulia laksana{" "}
+                    <span>&#10084;&#65039;</span>
                   </p>
                   <button
                     onClick={handleClose}
                     className="rounded-full p-1 text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
                     </svg>
                   </button>
                 </div>
@@ -120,16 +132,17 @@ export function LoveLetterModal({ recipientName }: LoveLetterModalProps) {
 
                 <div className="space-y-4 text-sm leading-relaxed text-foreground/80">
                   <p>
-                    how was this last 2 year?{" "}
-                    i know its full of <span className="font-bold text-foreground">BULLLYING</span> wkwkwk
+                    how was this last 2 year? i know its full of{" "}
+                    <span className="font-bold text-foreground">BULLLYING</span>{" "}
+                    wkwkwk
                   </p>
-                  <p>
-                    but its also full of joy and happiness, right?
-                  </p>
+                  <p>but its also full of joy and happiness, right?</p>
 
                   <p>
                     have you ever wondered you have so many nicknames?{" "}
-                    <span className="italic text-secondary">cegundeng, sambilung, Heru Tamcit, brengsek kecil</span>{" "}
+                    <span className="italic text-secondary">
+                      cegundeng, sambilung, Heru Tamcit, brengsek kecil
+                    </span>{" "}
                     and sooooo many more
                   </p>
 
@@ -137,25 +150,34 @@ export function LoveLetterModal({ recipientName }: LoveLetterModalProps) {
                     Have you ever wondered always got full when try new food{" "}
                     <br />
                     being <span className="italic">plenger</span>, being{" "}
-                    <span className="italic">{"\u201C"}tek tambah nasi ya{"\u201D"}</span>, being{" "}
-                    <span className="italic">{"\u201C"}wuihhh shedepp nyoooo{"\u201D"}</span>
+                    <span className="italic">
+                      {"\u201C"}tek tambah nasi ya{"\u201D"}
+                    </span>
+                    , being{" "}
+                    <span className="italic">
+                      {"\u201C"}wuihhh shedepp nyoooo{"\u201D"}
+                    </span>
                   </p>
 
                   <p>
                     Have you ever wondered being loved in every your conditions{" "}
                     <br />
-                    being ileran, being sariawan for a weeks, and being crying cause of salmon{" "}
-                    <span className="text-xs text-muted-foreground">(but still got bullied for sure)</span>
+                    being ileran, being sariawan for a weeks, and being crying
+                    cause of salmon{" "}
+                    <span className="text-xs text-muted-foreground">
+                      (but still got bullied for sure)
+                    </span>
                   </p>
 
                   <p>
-                    Have you ever wondered got bullied{" "}
-                    <br />
-                    and you still feel happy, feel loved, and angry at the same time
+                    Have you ever wondered got bullied <br />
+                    and you still feel happy, feel loved, and angry at the same
+                    time
                   </p>
 
                   <p className="pt-2 text-base text-foreground font-medium">
-                    but i also never ever wondered have someone that truly loved me.
+                    but i also never ever wondered have someone that truly loved
+                    me.
                   </p>
 
                   <p className="text-base text-primary font-medium">
@@ -170,7 +192,7 @@ export function LoveLetterModal({ recipientName }: LoveLetterModalProps) {
                   onClick={handleClose}
                   className="w-full rounded-full bg-secondary/10 py-2.5 text-sm font-medium text-secondary transition-colors hover:bg-secondary/20"
                 >
-                  Makasih sayang <span>&#128149;</span>
+                  Apasichhhh kamu nih <span>&#128149;</span>
                 </button>
               </div>
             </div>

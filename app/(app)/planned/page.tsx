@@ -24,7 +24,9 @@ const moodFilters = [
 export default function PlannedPage() {
   const [places, setPlaces] = useState<PlaceWithUser[]>([]);
   const [currentUser, setCurrentUser] = useState<Username>("hasbi");
-  const [selectedPlace, setSelectedPlace] = useState<PlaceWithUser | null>(null);
+  const [selectedPlace, setSelectedPlace] = useState<PlaceWithUser | null>(
+    null
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const [, startTransition] = useTransition();
@@ -65,17 +67,21 @@ export default function PlannedPage() {
     // Data refresh happens on close
   };
 
-  const myReviewedCount = places.filter((place) => (
-    currentUser === "hasbi" ? place.hasbiRating !== null : place.nadyaRating !== null
-  )).length;
+  const myReviewedCount = places.filter((place) =>
+    currentUser === "hasbi"
+      ? place.hasbiRating !== null
+      : place.nadyaRating !== null
+  ).length;
 
   const needsMyReviewCount = places.filter((place) => {
-    const currentReviewed = currentUser === "hasbi"
-      ? place.hasbiRating !== null
-      : place.nadyaRating !== null;
-    const partnerReviewed = currentUser === "hasbi"
-      ? place.nadyaRating !== null
-      : place.hasbiRating !== null;
+    const currentReviewed =
+      currentUser === "hasbi"
+        ? place.hasbiRating !== null
+        : place.nadyaRating !== null;
+    const partnerReviewed =
+      currentUser === "hasbi"
+        ? place.nadyaRating !== null
+        : place.hasbiRating !== null;
     return partnerReviewed && !currentReviewed;
   }).length;
 
@@ -97,14 +103,9 @@ export default function PlannedPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-medium">Mau Kesini 📋</h1>
-        <span className={`text-xs ${currentUser === "hasbi" ? "text-primary" : "text-secondary"}`}>
-          Akun aktif: {currentUser === "hasbi" ? "Hasbi" : "Nadya"}
-        </span>
-      </div>
+      <h1 className="text-lg font-medium">Mau Kesini 📋</h1>
 
-      <Link
+      {/* <Link
         href="/buat-lu"
         className="flex items-center justify-between rounded-2xl border-2 border-border bg-card p-3 text-sm shadow-[0_4px_0_0_rgba(61,44,44,0.06)] transition-colors hover:bg-muted/40"
       >
@@ -114,7 +115,7 @@ export default function PlannedPage() {
           <p className="text-xs text-muted-foreground">Pesan kilat + love voucher sekarang pindah ke sini.</p>
         </div>
         <span className="text-xs font-medium text-primary">Buka</span>
-      </Link>
+      </Link> */}
 
       {/* Mood Filter */}
       {places.length > 0 && (
@@ -141,16 +142,28 @@ export default function PlannedPage() {
         <div className="space-y-3">
           <div className="grid grid-cols-3 gap-3">
             <div className="rounded-2xl border-2 border-border bg-card p-3 shadow-[0_4px_0_0_rgba(61,44,44,0.06)]">
-              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Antrian</p>
-              <p className="mt-1 text-lg font-medium text-foreground">{places.length}</p>
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                Antrian
+              </p>
+              <p className="mt-1 text-lg font-medium text-foreground">
+                {places.length}
+              </p>
             </div>
             <div className="rounded-2xl border-2 border-border bg-card p-3 shadow-[0_4px_0_0_rgba(61,44,44,0.06)]">
-              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Udah Review</p>
-              <p className="mt-1 text-lg font-medium text-foreground">{myReviewedCount}</p>
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                Udah Review
+              </p>
+              <p className="mt-1 text-lg font-medium text-foreground">
+                {myReviewedCount}
+              </p>
             </div>
             <div className="rounded-2xl border-2 border-border bg-card p-3 shadow-[0_4px_0_0_rgba(61,44,44,0.06)]">
-              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Giliran Lu</p>
-              <p className="mt-1 text-lg font-medium text-foreground">{needsMyReviewCount}</p>
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                Giliran Lu
+              </p>
+              <p className="mt-1 text-lg font-medium text-foreground">
+                {needsMyReviewCount}
+              </p>
             </div>
           </div>
 
@@ -158,7 +171,9 @@ export default function PlannedPage() {
           {selectedMood && (
             <p className="text-xs text-muted-foreground">
               {filteredPlaces.length > 0
-                ? `${filteredPlaces.length} tempat cocok buat mood ${moodFilters.find(f => f.value === selectedMood)?.label.toLowerCase()}`
+                ? `${filteredPlaces.length} tempat cocok buat mood ${moodFilters
+                    .find((f) => f.value === selectedMood)
+                    ?.label.toLowerCase()}`
                 : "Belom ada tempat di tag ini, coba filter lain!"}
             </p>
           )}
@@ -174,8 +189,17 @@ export default function PlannedPage() {
         </div>
       ) : (
         <div className="text-center py-12">
-          <Image src="/assets/pixel-plate.svg" alt="" aria-hidden="true" width={40} height={40} className="mx-auto mb-3 h-10 w-10" />
-          <p className="mb-2 text-muted-foreground">Belum ada rencana makan nih</p>
+          <Image
+            src="/assets/pixel-plate.svg"
+            alt=""
+            aria-hidden="true"
+            width={40}
+            height={40}
+            className="mx-auto mb-3 h-10 w-10"
+          />
+          <p className="mb-2 text-muted-foreground">
+            Belum ada rencana makan nih
+          </p>
           <p className="text-sm text-muted-foreground/70">
             ACC dulu saran tempat biar masuk sini
           </p>
@@ -188,7 +212,9 @@ export default function PlannedPage() {
           currentUser={currentUser}
           onClose={() => {
             setSelectedPlace(null);
-            startTransition(() => { fetchData(); });
+            startTransition(() => {
+              fetchData();
+            });
           }}
           onSuccess={handleArchiveSuccess}
         />

@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState, useTransition, type FormEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useState,
+  useTransition,
+  type FormEvent,
+} from "react";
 import { setPartnerMessage } from "@/app/actions/message";
 import { LoveVoucherSection } from "@/components/LoveVoucherSection";
 import { Button } from "@/components/ui/button";
@@ -81,20 +87,23 @@ export default function BuatLuPage() {
       <section className="rounded-[28px] border-2 border-border bg-card p-4 shadow-[0_6px_0_0_rgba(61,44,44,0.08)]">
         <div className="flex flex-col gap-2">
           <div>
-            <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Private Space</p>
-            <h1 className="mt-1 text-xl font-semibold text-foreground">Buat lu 💌</h1>
+            <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+              Private Space
+            </p>
+            <h1 className="mt-1 text-xl font-semibold text-foreground">
+              Buat lu 💌
+            </h1>
             <p className="mt-1 text-sm text-muted-foreground">
               Tempat ngobrol singkat, redeem voucher, dan keep things sweet.
             </p>
           </div>
-          <span className={`text-xs ${currentUser === "hasbi" ? "text-primary" : "text-secondary"}`}>
-            Akun aktif: {currentUser === "hasbi" ? "Hasbi" : "Nadya"}
-          </span>
         </div>
       </section>
 
       <section className="space-y-4 rounded-[28px] border-2 border-border bg-card p-4 shadow-[0_6px_0_0_rgba(61,44,44,0.08)]">
-        <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Pesan Kilat</p>
+        <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+          Pesan Kilat
+        </p>
         <div className="rounded-2xl border-2 border-border bg-muted/50 p-4">
           <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
             Pesan Dari {partnerName}
@@ -105,7 +114,10 @@ export default function BuatLuPage() {
         </div>
 
         <form onSubmit={handleMessageSubmit} className="space-y-3">
-          <label htmlFor="partner-message" className="block text-sm font-medium text-foreground">
+          <label
+            htmlFor="partner-message"
+            className="block text-sm font-medium text-foreground"
+          >
             Kirim Pesan Kilat Buat {partnerName}
           </label>
           <div className="flex flex-col gap-2">
@@ -113,16 +125,30 @@ export default function BuatLuPage() {
               id="partner-message"
               maxLength={120}
               value={messageDraft}
-              onChange={(e) => setMessageDraft(e.target.value.replace(/\r?\n/g, " "))}
+              onChange={(e) =>
+                setMessageDraft(e.target.value.replace(/\r?\n/g, " "))
+              }
               placeholder="Contoh: Nanti malem gas kesini ya"
             />
-            <Button type="submit" size="sm" disabled={isSavingMessage} className="w-full">
+            <Button
+              type="submit"
+              size="sm"
+              disabled={isSavingMessage}
+              className="w-full"
+            >
               {isSavingMessage ? "Ngirim..." : "Kirim"}
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground">1 baris doang, maksimal 120 karakter.</p>
+          <p className="text-xs text-muted-foreground">
+            1 baris doang, maksimal 120 karakter.
+          </p>
           {messageFeedback && (
-            <p className={cn("text-xs", isMessageError ? "text-destructive" : "text-success")}>
+            <p
+              className={cn(
+                "text-xs",
+                isMessageError ? "text-destructive" : "text-success"
+              )}
+            >
               {messageFeedback}
             </p>
           )}
