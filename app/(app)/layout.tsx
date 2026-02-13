@@ -1,6 +1,7 @@
 import { TabNavigation } from "@/components/TabNavigation";
 import { UserSelector } from "@/components/UserSelector";
 import { AddPlaceModal } from "@/components/AddPlaceModal";
+import { LoveLetterModal } from "@/components/LoveLetterModal";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { redirect } from "next/navigation";
@@ -55,6 +56,9 @@ export default async function AppLayout({
 
       {/* Add Place FAB */}
       <AddPlaceModal currentUser={currentUser} />
+
+      {/* Love Letter for Nadya */}
+      {currentUser === "nadya" && <LoveLetterModal recipientName="Nadya" />}
 
       {/* Bottom Navigation */}
       <TabNavigation pendingCount={pendingCount} />
