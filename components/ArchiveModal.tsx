@@ -55,6 +55,7 @@ export function ArchiveModal({
   const [photoPreview, setPhotoPreview] = useState<string | null>(
     hasExistingPhoto && !isNewVisit ? getImageUrl(existingVisit?.photoUrl || place.photoUrl || "") : null
   );
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
 
@@ -98,13 +99,10 @@ export function ArchiveModal({
       return;
     }
 
-    // Convert to base64
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      setPhotoPreview(event.target?.result as string);
-      setError(null);
-    };
-    reader.readAsDataURL(file);
+    // Keep the file for upload and create a local preview URL
+    setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(file));
+    setError(null);
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -117,9 +115,25 @@ export function ArchiveModal({
     }
 
     startTransition(async () => {
-      // Only send new photo if it's different from existing
-      const existingPhotoDisplay = getImageUrl(existingVisit?.photoUrl || place.photoUrl || "");
-      const newPhoto = photoPreview !== existingPhotoDisplay ? photoPreview : undefined;
+      // Upload new photo via API route (avoids Server Action serialization limit)
+      let uploadedPhotoKey: string | undefined;
+      if (photoFile) {
+        try {
+          const formData = new FormData();
+          formData.append("file", photoFile);
+          formData.append("folder", `visits/${place.id}`);
+          const res = await fetch("/api/images", { method: "POST", body: formData });
+          const data = await res.json();
+          if (!res.ok) {
+            setError(data.error || "Gagal upload gambar");
+            return;
+          }
+          uploadedPhotoKey = data.key;
+        } catch {
+          setError("Gagal upload gambar, coba lagi");
+          return;
+        }
+      }
 
       let result;
 
@@ -131,7 +145,7 @@ export function ArchiveModal({
           new Date(visitDate),
           rating,
           notes,
-          newPhoto || undefined,
+          uploadedPhotoKey,
           orderedItems.length > 0 ? orderedItems : undefined
         );
       } else {
@@ -142,7 +156,7 @@ export function ArchiveModal({
           new Date(visitDate),
           rating,
           notes,
-          newPhoto || undefined,
+          uploadedPhotoKey,
           orderedItems.length > 0 ? orderedItems : undefined,
           existingVisit?.id
         );
@@ -271,7 +285,9 @@ export function ArchiveModal({
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
+                        if (photoPreview) URL.revokeObjectURL(photoPreview);
                         setPhotoPreview(null);
+                        setPhotoFile(null);
                         if (fileInputRef.current) fileInputRef.current.value = "";
                       }}
                       variant="destructive"

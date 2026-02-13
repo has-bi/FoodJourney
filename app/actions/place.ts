@@ -5,7 +5,6 @@ import { db } from "@/lib/db";
 import { extractPlaceInfo, isValidMapsLink } from "@/lib/gemini";
 import { getCurrentUser } from "@/lib/auth";
 import type { PlaceCategory, PlaceStatus, VisitType, Prisma } from "@prisma/client";
-import { uploadImage } from "@/lib/r2";
 
 export async function addPlace(
   _prevState: { error?: string; success?: boolean } | null,
@@ -328,13 +327,8 @@ export async function addVisitReview(
       }
       return { success: true, completed: willBeComplete, visitId };
     } else {
-      // Upload photo to R2 if provided as base64
-      let uploadedPhotoUrl: string | null = null;
-      if (photoUrl && photoUrl.startsWith("data:")) {
-        uploadedPhotoUrl = await uploadImage(photoUrl, `visits/${placeId}`);
-      } else if (photoUrl) {
-        uploadedPhotoUrl = photoUrl;
-      }
+      // Photo is already uploaded via /api/images – just use the key directly
+      const uploadedPhotoUrl: string | null = photoUrl || null;
 
       const normalizedOrderedItems = normalizeOrderedItems(orderedItems);
 
@@ -525,13 +519,8 @@ export async function createNewVisit(
 
     const isSolo = place.visitType === "solo";
 
-    // Upload photo to R2 if provided as base64
-    let uploadedPhotoUrl: string | null = null;
-    if (photoUrl && photoUrl.startsWith("data:")) {
-      uploadedPhotoUrl = await uploadImage(photoUrl, `visits/${placeId}`);
-    } else if (photoUrl) {
-      uploadedPhotoUrl = photoUrl;
-    }
+    // Photo is already uploaded via /api/images – just use the key directly
+    const uploadedPhotoUrl: string | null = photoUrl || null;
 
     const normalizedOrderedItems = normalizeOrderedItems(orderedItems);
 

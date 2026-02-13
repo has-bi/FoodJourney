@@ -21,16 +21,6 @@ export async function uploadImage(
   base64Data: string,
   folder: string = "visits"
 ): Promise<string> {
-  const { endpoint, accessKeyId, secretAccessKey, bucket } = getR2Config();
-  const r2 = new S3Client({
-    region: "auto",
-    endpoint,
-    credentials: {
-      accessKeyId,
-      secretAccessKey,
-    },
-  });
-
   // Parse data URL or raw base64
   let contentType = "image/jpeg";
   let base64 = base64Data;
@@ -44,6 +34,29 @@ export async function uploadImage(
   }
 
   const buffer = Buffer.from(base64, "base64");
+  return uploadBuffer(buffer, contentType, folder);
+}
+
+/**
+ * Upload a raw Buffer to R2 and return a key reference.
+ * Used by the /api/images POST endpoint to avoid serializing large
+ * payloads through Server Actions.
+ */
+export async function uploadBuffer(
+  buffer: Buffer,
+  contentType: string = "image/jpeg",
+  folder: string = "visits"
+): Promise<string> {
+  const { endpoint, accessKeyId, secretAccessKey, bucket } = getR2Config();
+  const r2 = new S3Client({
+    region: "auto",
+    endpoint,
+    credentials: {
+      accessKeyId,
+      secretAccessKey,
+    },
+  });
+
   const ext = contentType.split("/")[1] || "jpg";
   const key = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
 

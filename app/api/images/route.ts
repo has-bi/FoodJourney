@@ -1,5 +1,6 @@
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { NextRequest, NextResponse } from "next/server";
+import { uploadBuffer } from "@/lib/r2";
 
 function getR2Config() {
   const endpoint = process.env.R2_ENDPOINT;
@@ -12,6 +13,35 @@ function getR2Config() {
   }
 
   return { endpoint, accessKeyId, secretAccessKey, bucket };
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const formData = await request.formData();
+    const file = formData.get("file") as File | null;
+    const folder = (formData.get("folder") as string) || "visits";
+
+    if (!file || !(file instanceof File)) {
+      return NextResponse.json({ error: "File gambarnya mana?" }, { status: 400 });
+    }
+
+    if (!file.type.startsWith("image/")) {
+      return NextResponse.json({ error: "Bukan file gambar" }, { status: 400 });
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      return NextResponse.json({ error: "Ukuran gambar maksimal 5MB" }, { status: 400 });
+    }
+
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const key = await uploadBuffer(buffer, file.type, folder);
+
+    return NextResponse.json({ key });
+  } catch (error) {
+    console.error("Failed to upload image", error);
+    return NextResponse.json({ error: "Gagal upload gambar" }, { status: 500 });
+  }
 }
 
 export async function GET(request: NextRequest) {
